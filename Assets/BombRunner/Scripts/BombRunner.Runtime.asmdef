@@ -2,6 +2,7 @@
     "name": "BombRunner.Runtime",
     "references": [
         "UniTask",
-        "VContainer"
+        "VContainer",
+        "Unity.InputSystem"
     ]
 }
