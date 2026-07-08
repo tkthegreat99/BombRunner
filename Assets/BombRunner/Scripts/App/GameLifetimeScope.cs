@@ -1,6 +1,7 @@
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
+using BombRunner.Scripts.Camera;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -12,6 +13,8 @@ namespace BombRunner.Scripts.App
 	{
 		[SerializeField] private PlayerInputReader playerInputReader;
 		[SerializeField] private PlayerSpawnSettings playerSpawnSettings;
+		[SerializeField] private LocalPlayerCameraFollow cameraFollow;
+		[SerializeField] private DashCooldownLogView dashCooldownLogView;
 
 		protected override void Configure(IContainerBuilder builder)
 		{
@@ -41,8 +44,26 @@ namespace BombRunner.Scripts.App
 				return;
 			}
 
+			if (cameraFollow == null)
+			{
+				cameraFollow = FindFirstObjectByType<LocalPlayerCameraFollow>();
+			}
+
+			if (dashCooldownLogView == null)
+			{
+				dashCooldownLogView = GetComponent<DashCooldownLogView>();
+			}
+
+			if (cameraFollow == null || dashCooldownLogView == null)
+			{
+				Debug.LogError("Game Scene 테스트 컴포넌트 연결이 필요합니다. CameraFollow와 DashCooldownLogView를 확인하세요.");
+				return;
+			}
+
 			// Game Scene 한 판 동안 사용할 입력, 스폰, 스테이지 시작 흐름을 등록한다.
 			builder.RegisterComponent(activeInputReader);
+			builder.RegisterComponent(cameraFollow);
+			builder.RegisterComponent(dashCooldownLogView);
 			builder.RegisterInstance(activeSpawnSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
