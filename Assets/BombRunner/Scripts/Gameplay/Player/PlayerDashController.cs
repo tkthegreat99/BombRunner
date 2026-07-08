@@ -91,7 +91,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 				var deltaTime = Time.deltaTime;
 				elapsedTime += deltaTime;
-				characterController.Move(direction * dashSpeed * deltaTime);
+				characterController.Move(direction * (dashSpeed * deltaTime));
 
 				await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
 			}
