@@ -1,7 +1,7 @@
+using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
-using BombRunner.Scripts.Camera;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -27,7 +27,7 @@ namespace BombRunner.Scripts.App
 
 			if (activeInputReader == null)
 			{
-				Debug.LogError("GameLifetimeScope에 PlayerInputReader가 없습니다.");
+				Debug.LogError("GameLifetimeScope에 PlayerInputReader가 필요합니다.");
 				return;
 			}
 
@@ -60,16 +60,17 @@ namespace BombRunner.Scripts.App
 				return;
 			}
 
-			// Game Scene 한 판 동안 사용할 입력, 스폰, 스테이지 시작 흐름을 등록한다.
+			// Game Scene 동안 사용할 입력, 스폰, 로컬 타겟 토스 검증 흐름을 등록한다.
 			builder.RegisterComponent(activeInputReader);
 			builder.RegisterComponent(cameraFollow);
 			builder.RegisterComponent(dashCooldownLogView);
 			builder.RegisterInstance(activeSpawnSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
+			builder.Register<LocalTargetTossPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.RegisterEntryPoint<StageManager>(Lifetime.Scoped);
 
-			Debug.Log("GameLifetimeScope 등록 완료: 로컬 플레이어 스폰 준비");
+			Debug.Log("GameLifetimeScope 등록 완료: 로컬 플레이어와 임시 더미 스폰 준비");
 		}
 	}
 }

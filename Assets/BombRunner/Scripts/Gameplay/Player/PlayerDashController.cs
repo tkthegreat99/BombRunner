@@ -18,7 +18,9 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private IInputService inputService;
 		private CharacterController characterController;
 		private PlayerMovementController movementController;
+		private PlayerStateController stateController;
 		private bool hasInputService;
+		private bool isInputEnabled = true;
 		private bool isDashing;
 		private bool isCoolingDown;
 		private float cooldownEndTime;
@@ -42,15 +44,21 @@ namespace BombRunner.Scripts.Gameplay.Player
 			this.dashCooldown = dashCooldown;
 		}
 
+		public void SetInputEnabled(bool isInputEnabled)
+		{
+			this.isInputEnabled = isInputEnabled;
+		}
+
 		private void Awake()
 		{
 			characterController = GetComponent<CharacterController>();
 			movementController = GetComponent<PlayerMovementController>();
+			TryGetComponent(out stateController);
 		}
 
 		private void Update()
 		{
-			if (!hasInputService || !inputService.DashPressed)
+			if (!hasInputService || !isInputEnabled || !inputService.DashPressed)
 			{
 				return;
 			}
@@ -68,6 +76,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 			isDashing = true;
 
+			if (stateController != null)
+			{
+				stateController.SetDashing(true);
+			}
+
 			try
 			{
 				await RunDashMoveAsync(movementController.LastMoveDirection, cancellationToken);
@@ -79,6 +92,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 			finally
 			{
 				isDashing = false;
+
+				if (stateController != null)
+				{
+					stateController.SetDashing(false);
+				}
 			}
 
 			await RunCooldownAsync(cancellationToken);
@@ -103,7 +121,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 			}
 		}
 
-		// 쿨타임 동안 재대시를 막아 폭탄 추격전의 리듬을 만든다.
+		// 쿨타임 동안 재사용을 막아 추격전의 리듬을 만든다.
 		private async UniTask RunCooldownAsync(CancellationToken cancellationToken)
 		{
 			isCoolingDown = true;

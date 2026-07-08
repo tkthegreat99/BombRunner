@@ -13,8 +13,10 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private IInputService inputService;
 		private CharacterController characterController;
 		private PlayerDashController dashController;
+		private PlayerStateController stateController;
 		private Vector3 lastMoveDirection = Vector3.forward;
 		private bool hasInputService;
+		private bool isInputEnabled = true;
 
 		public Vector3 LastMoveDirection => lastMoveDirection;
 
@@ -31,21 +33,37 @@ namespace BombRunner.Scripts.Gameplay.Player
 			this.rotationSpeed = rotationSpeed;
 		}
 
+		public void SetInputEnabled(bool isInputEnabled)
+		{
+			this.isInputEnabled = isInputEnabled;
+
+			if (!isInputEnabled && stateController != null)
+			{
+				stateController.SetMoving(false);
+			}
+		}
+
 		private void Awake()
 		{
 			characterController = GetComponent<CharacterController>();
 			TryGetComponent(out dashController);
+			TryGetComponent(out stateController);
 		}
 
 		private void Update()
 		{
-			if (!hasInputService)
+			if (!hasInputService || !isInputEnabled)
 			{
 				return;
 			}
 
 			if (dashController != null && dashController.IsDashing)
 			{
+				if (stateController != null)
+				{
+					stateController.SetMoving(false);
+				}
+
 				return;
 			}
 
@@ -59,8 +77,15 @@ namespace BombRunner.Scripts.Gameplay.Player
 				sqrMagnitude = 1f;
 			}
 
-			// XZ 평면에서만 이동하며, 입력이 있을 때 마지막 방향을 대시 기준으로 저장한다.
-			if (sqrMagnitude > 0.0001f)
+			var isMoving = sqrMagnitude > 0.0001f;
+
+			if (stateController != null)
+			{
+				stateController.SetMoving(isMoving);
+			}
+
+			// XZ 평면 이동만 처리하고, 입력이 없을 때는 마지막 이동 방향을 유지한다.
+			if (isMoving)
 			{
 				lastMoveDirection = moveDirection;
 				RotateToMoveDirection(moveDirection);
