@@ -1836,6 +1836,34 @@ Pooling 사용
 
 
 
+임시 검증용 코드 처리:
+
+초기 조작감, 씬 전환, 카메라, HUD 상태를 빠르게 확인하기 위한 임시 코드는 허용한다.
+
+단, 임시 코드는 제품 구조로 간주하지 않는다.
+
+예시:
+
+MainMenuQuickStartController
+
+DashCooldownLogView
+
+LocalPlayerCameraFollow
+
+위와 같은 임시 클래스는 실제 UI, CameraService, SceneFlow, Lobby Flow가 추가되면 교체하거나 제거한다.
+
+임시 HUD는 코드로 UI를 동적 생성하지 않는다.
+
+쿨타임, 상태 표시, 디버그 안내는 로그 또는 미리 배치된 View/Prefab 기반으로만 처리한다.
+
+임시 씬 진입 로직도 SceneLoader와 GameSettings를 경유해야 하며, raw string scene name을 직접 흩뿌리지 않는다.
+
+임시 코드에는 한국어 주석으로 목적과 교체 시점을 남긴다.
+
+임시 코드가 네트워크 권한, 라운드 규칙, UI Manager 구조를 우회해서 영구 기능처럼 자리 잡지 않도록 한다.
+
+
+
 24\. 절대 잊지 말 것
 
 ============================================================
