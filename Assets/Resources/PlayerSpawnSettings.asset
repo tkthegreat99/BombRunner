@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerPrefab: {fileID: 100000, guid: d93c63d14b071204bb627cbc1ace6ce2, type: 3}
   spawnPosition: {x: 0, y: 0, z: 0}
-  moveSpeed: 5
-  rotationSpeed: 720
-  dashDistance: 4
-  dashDuration: 0.14
-  dashCooldown: 0.8
+  moveSpeed: 6
+  rotationSpeed: 900
+  dashDistance: 4.5
+  dashDuration: 0.16
+  dashCooldown: 0.75
