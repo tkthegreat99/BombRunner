@@ -12,6 +12,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private IInputService inputService;
 		private CharacterController characterController;
+		private PlayerDashController dashController;
 		private Vector3 lastMoveDirection = Vector3.forward;
 		private bool hasInputService;
 
@@ -33,11 +34,17 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private void Awake()
 		{
 			characterController = GetComponent<CharacterController>();
+			TryGetComponent(out dashController);
 		}
 
 		private void Update()
 		{
 			if (!hasInputService)
+			{
+				return;
+			}
+
+			if (dashController != null && dashController.IsDashing)
 			{
 				return;
 			}

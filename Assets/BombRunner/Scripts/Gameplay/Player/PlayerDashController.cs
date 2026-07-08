@@ -21,6 +21,12 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private bool hasInputService;
 		private bool isDashing;
 		private bool isCoolingDown;
+		private float cooldownEndTime;
+
+		public bool IsDashing => isDashing;
+		public bool IsCoolingDown => isCoolingDown;
+		public bool IsDashReady => !isDashing && !isCoolingDown;
+		public float CooldownRemaining => isCoolingDown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
 
 		[Inject]
 		public void Construct(IInputService inputService)
@@ -101,6 +107,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private async UniTask RunCooldownAsync(CancellationToken cancellationToken)
 		{
 			isCoolingDown = true;
+			cooldownEndTime = Time.time + Mathf.Max(0f, dashCooldown);
 
 			try
 			{
@@ -113,6 +120,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 			finally
 			{
 				isCoolingDown = false;
+				cooldownEndTime = 0f;
 			}
 		}
 	}
