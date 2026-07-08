@@ -72,8 +72,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b6e4b5afe654e6894e5ac5b512ff088, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  rotationSpeed: 720
+  moveSpeed: 6
+  rotationSpeed: 900
 --- !u!114 &100006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86,9 +86,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9596ab4c24c9448b98bc5631cd31cbd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dashDistance: 4
-  dashDuration: 0.14
-  dashCooldown: 0.8
+  dashDistance: 4.5
+  dashDuration: 0.16
+  dashCooldown: 0.75
 --- !u!1001 &3886207617785103015
 PrefabInstance:
   m_ObjectHideFlags: 0
