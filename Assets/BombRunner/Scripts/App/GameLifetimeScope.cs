@@ -1,3 +1,4 @@
+using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
@@ -13,6 +14,7 @@ namespace BombRunner.Scripts.App
 	{
 		[SerializeField] private PlayerInputReader playerInputReader;
 		[SerializeField] private PlayerSpawnSettings playerSpawnSettings;
+		[SerializeField] private BombSpawnSettings bombSpawnSettings;
 		[SerializeField] private LocalPlayerCameraFollow cameraFollow;
 		[SerializeField] private DashCooldownLogView dashCooldownLogView;
 
@@ -44,6 +46,19 @@ namespace BombRunner.Scripts.App
 				return;
 			}
 
+			var activeBombSpawnSettings = bombSpawnSettings;
+
+			if (activeBombSpawnSettings == null)
+			{
+				activeBombSpawnSettings = Resources.Load<BombSpawnSettings>(BombSpawnSettingsResourcePath.DefaultSettings);
+			}
+
+			if (activeBombSpawnSettings == null || activeBombSpawnSettings.BombPrefab == null)
+			{
+				Debug.LogError("BombSpawnSettings 또는 BombPrefab을 찾을 수 없습니다. Resources/BombSpawnSettings 연결이 필요합니다.");
+				return;
+			}
+
 			if (cameraFollow == null)
 			{
 				cameraFollow = FindFirstObjectByType<LocalPlayerCameraFollow>();
@@ -60,17 +75,21 @@ namespace BombRunner.Scripts.App
 				return;
 			}
 
-			// Game Scene 동안 사용할 입력, 스폰, 로컬 타겟 토스 검증 흐름을 등록한다.
+			// Game Scene 동안 사용하는 입력, 스폰, 폭탄 추적, 로컬 타겟 토스 검증 흐름을 등록합니다.
 			builder.RegisterComponent(activeInputReader);
 			builder.RegisterComponent(cameraFollow);
 			builder.RegisterComponent(dashCooldownLogView);
 			builder.RegisterInstance(activeSpawnSettings);
+			builder.RegisterInstance(activeBombSpawnSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
+			builder.Register<BombState>(Lifetime.Scoped);
+			builder.Register<BombTargetService>(Lifetime.Scoped);
+			builder.Register<BombSpawnService>(Lifetime.Scoped);
 			builder.Register<LocalTargetTossPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.RegisterEntryPoint<StageManager>(Lifetime.Scoped);
 
-			Debug.Log("GameLifetimeScope 등록 완료: 로컬 플레이어와 임시 더미 스폰 준비");
+			Debug.Log("GameLifetimeScope 등록 완료: 로컬 플레이어, 더미, 폭탄 추적 루프 준비");
 		}
 	}
 }

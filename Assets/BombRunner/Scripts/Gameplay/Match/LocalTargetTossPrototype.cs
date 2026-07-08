@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Gameplay.Player;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -12,19 +13,23 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private const float TossDistanceSqr = 1.44f;
 		private static readonly TimeSpan InvulnerableDuration = TimeSpan.FromSeconds(5);
 
+		private readonly BombTargetService bombTargetService;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
 		private PlayerStateController localPlayer;
 		private PlayerStateController dummyPlayer;
-		private PlayerStateController currentTarget;
 		private bool isInitialized;
 		private bool wasTouching;
 
-		// 임시 로컬 타겟 토스 검증용입니다. 네트워크 폭탄 AI/타겟 RPC가 들어오면 Host 권한 서비스로 교체합니다.
+		public LocalTargetTossPrototype(BombTargetService bombTargetService)
+		{
+			this.bombTargetService = bombTargetService;
+		}
+
+		// 임시 로컬 타겟 토스 검증용입니다. 이후 타겟 변경 확정은 Host/Master 권한 서비스와 RPC로 이동합니다.
 		public void Initialize(PlayerStateController localPlayer, PlayerStateController dummyPlayer)
 		{
 			this.localPlayer = localPlayer;
 			this.dummyPlayer = dummyPlayer;
-			currentTarget = localPlayer;
 			isInitialized = localPlayer != null && dummyPlayer != null;
 			wasTouching = false;
 
@@ -35,7 +40,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 			this.localPlayer.SetPlayerLabel("Local Player");
 			this.dummyPlayer.SetPlayerLabel("Dummy Player");
-			SetTarget(this.localPlayer);
 		}
 
 		public void Tick()
@@ -67,6 +71,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 			wasTouching = true;
 
+			var currentTarget = bombTargetService.TargetPlayer;
+
 			if (currentTarget == localPlayer)
 			{
 				TryTransferTarget(localPlayer, dummyPlayer);
@@ -90,16 +96,13 @@ namespace BombRunner.Scripts.Gameplay.Match
 				return;
 			}
 
-			SetTarget(toPlayer);
+			if (!bombTargetService.TrySetTarget(toPlayer))
+			{
+				return;
+			}
+
 			RunInvulnerableWindowAsync(fromPlayer, cancellationTokenSource.Token).Forget();
 			Debug.Log($"Target toss: {fromPlayer.PlayerLabel} -> {toPlayer.PlayerLabel}, {fromPlayer.PlayerLabel} 5초 면역");
-		}
-
-		private void SetTarget(PlayerStateController target)
-		{
-			currentTarget = target;
-			localPlayer.SetTarget(localPlayer == target);
-			dummyPlayer.SetTarget(dummyPlayer == target);
 		}
 
 		private async UniTaskVoid RunInvulnerableWindowAsync(PlayerStateController player, CancellationToken cancellationToken)
