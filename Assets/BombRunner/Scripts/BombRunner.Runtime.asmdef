@@ -1,3 +1,7 @@
 {
-	"name": "BombRunner.Runtime"
+    "name": "BombRunner.Runtime",
+    "references": [
+        "UniTask",
+        "VContainer"
+    ]
 }
