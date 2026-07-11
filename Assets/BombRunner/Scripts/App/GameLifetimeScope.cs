@@ -19,6 +19,7 @@ namespace BombRunner.Scripts.App
 		[SerializeField] private GameBalanceSettings gameBalanceSettings;
 		[SerializeField] private LocalPlayerCameraFollow cameraFollow;
 		[SerializeField] private DashCooldownLogView dashCooldownLogView;
+		[SerializeField] private LocalMatchFeedbackView matchFeedbackView;
 
 		protected override void Configure(IContainerBuilder builder)
 		{
@@ -84,6 +85,17 @@ namespace BombRunner.Scripts.App
 				dashCooldownLogView = GetComponent<DashCooldownLogView>();
 			}
 
+			if (matchFeedbackView == null)
+			{
+				matchFeedbackView = FindFirstObjectByType<LocalMatchFeedbackView>();
+			}
+
+			if (matchFeedbackView == null)
+			{
+				var feedbackViewObject = new GameObject("Local Match Feedback View");
+				matchFeedbackView = feedbackViewObject.AddComponent<LocalMatchFeedbackView>();
+			}
+
 			if (cameraFollow == null || dashCooldownLogView == null)
 			{
 				Debug.LogError("Game Scene test components are missing. Check CameraFollow and DashCooldownLogView.");
@@ -93,6 +105,7 @@ namespace BombRunner.Scripts.App
 			builder.RegisterComponent(activeInputReader);
 			builder.RegisterComponent(cameraFollow);
 			builder.RegisterComponent(dashCooldownLogView);
+			builder.RegisterComponent(matchFeedbackView);
 			builder.RegisterInstance(activeSpawnSettings);
 			builder.RegisterInstance(activeBombSpawnSettings);
 			builder.RegisterInstance(activeBalanceSettings);
@@ -104,6 +117,7 @@ namespace BombRunner.Scripts.App
 			builder.Register<LocalMatchFlowService>(Lifetime.Scoped);
 			builder.Register<LocalPlayerSeparationService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalTargetTossPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
+			builder.Register<LocalTauntPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.RegisterEntryPoint<StageManager>(Lifetime.Scoped);
 
 			Debug.Log("GameLifetimeScope registration complete: local prototype match loop ready.");

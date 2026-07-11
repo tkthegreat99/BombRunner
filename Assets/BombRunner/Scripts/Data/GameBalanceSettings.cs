@@ -27,6 +27,9 @@ namespace BombRunner.Scripts.Data
 		[SerializeField] private float bombDropHeight = 6f;
 		[SerializeField] private float bombDropDurationSeconds = 0.65f;
 		[SerializeField] private float bombStartCountdownSeconds = 3f;
+		[SerializeField] private float tauntRadius = 2.2f;
+		[SerializeField] private float tauntBombRiskHoldSeconds = 1.25f;
+		[SerializeField] private float tauntBombRiskDistance = 5f;
 
 		public float TagDistance => Mathf.Max(0f, tagDistance);
 		public float TagDistanceSqr => TagDistance * TagDistance;
@@ -50,6 +53,11 @@ namespace BombRunner.Scripts.Data
 		public float BombDropHeight => Mathf.Max(0f, bombDropHeight);
 		public float BombDropDurationSeconds => Mathf.Max(0f, bombDropDurationSeconds);
 		public float BombStartCountdownSeconds => Mathf.Max(0f, bombStartCountdownSeconds);
+		public float TauntRadius => Mathf.Max(0f, tauntRadius);
+		public float TauntRadiusSqr => TauntRadius * TauntRadius;
+		public float TauntBombRiskHoldSeconds => Mathf.Max(0f, tauntBombRiskHoldSeconds);
+		public float TauntBombRiskDistance => Mathf.Max(0f, tauntBombRiskDistance);
+		public float TauntBombRiskDistanceSqr => TauntBombRiskDistance * TauntBombRiskDistance;
 
 		public Vector2 GetDurationRange(BombTimerPhase timerPhase)
 		{

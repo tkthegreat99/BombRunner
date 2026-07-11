@@ -15,6 +15,11 @@ namespace BombRunner.Scripts.Bomb
 		private readonly BombTargetService bombTargetService;
 		private GameObject bombInstance;
 
+		public BombCreatureController CurrentController =>
+			bombInstance != null && bombInstance.TryGetComponent<BombCreatureController>(out var controller)
+				? controller
+				: null;
+
 		public BombSpawnService(
 			IObjectResolver objectResolver,
 			BombSpawnSettings bombSpawnSettings,
@@ -68,24 +73,6 @@ namespace BombRunner.Scripts.Bomb
 		public Vector3 GetLocalBombSpawnPosition(PlayerStateController[] players)
 		{
 			return GetSpawnPosition(players);
-		}
-
-		public void ShowLocalSpawnCue(PlayerStateController[] players)
-		{
-			if (players == null || players.Length == 0)
-			{
-				return;
-			}
-
-			var spawnPosition = GetSpawnPosition(players);
-			spawnPosition.y = balanceSettings.SpawnCueHeight;
-			var cue = new GameObject("Temporary Bomb Spawn Cue");
-			cue.name = "Temporary Bomb Spawn Cue";
-			cue.transform.position = spawnPosition;
-			ConfigureSpawnCueRing(cue);
-
-			Object.Destroy(cue, balanceSettings.SpawnCueDurationSeconds);
-			Debug.Log("Local match flow: next bomb spawn cue shown");
 		}
 
 		public void DespawnLocalBomb(BombCreatureController controller)
@@ -144,69 +131,6 @@ namespace BombRunner.Scripts.Bomb
 
 			spawnPosition.y = 0.6f;
 			return spawnPosition;
-		}
-
-		private Material CreateTemporarySpawnCueMaterial()
-		{
-			var shader = Shader.Find("Universal Render Pipeline/Unlit");
-
-			if (shader == null)
-			{
-				shader = Shader.Find("Sprites/Default");
-			}
-
-			var material = new Material(shader);
-			var color = new Color(1f, 0.78f, 0.12f, 0.42f);
-
-			if (material.HasProperty("_BaseColor"))
-			{
-				material.SetColor("_BaseColor", color);
-			}
-
-			if (material.HasProperty("_Color"))
-			{
-				material.SetColor("_Color", color);
-			}
-
-			SetMaterialFloatIfPresent(material, "_Surface", 1f);
-			SetMaterialFloatIfPresent(material, "_Blend", 0f);
-			SetMaterialFloatIfPresent(material, "_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
-			SetMaterialFloatIfPresent(material, "_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-			SetMaterialFloatIfPresent(material, "_ZWrite", 0f);
-			material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-			material.renderQueue = 3000;
-			return material;
-		}
-
-		private void ConfigureSpawnCueRing(GameObject cue)
-		{
-			var lineRenderer = cue.AddComponent<LineRenderer>();
-			lineRenderer.loop = true;
-			lineRenderer.useWorldSpace = false;
-			lineRenderer.positionCount = 48;
-			lineRenderer.startWidth = 0.08f;
-			lineRenderer.endWidth = 0.08f;
-			lineRenderer.material = CreateTemporarySpawnCueMaterial();
-			lineRenderer.startColor = new Color(1f, 0.78f, 0.12f, 0.8f);
-			lineRenderer.endColor = new Color(1f, 0.28f, 0.08f, 0.8f);
-
-			for (var i = 0; i < lineRenderer.positionCount; i++)
-			{
-				var angle = Mathf.PI * 2f * i / lineRenderer.positionCount;
-				var position = new Vector3(
-					Mathf.Cos(angle) * balanceSettings.SpawnCueRadius,
-					0f,
-					Mathf.Sin(angle) * balanceSettings.SpawnCueRadius);
-				lineRenderer.SetPosition(i, position);
-			}
-		}
-
-		private void SetMaterialFloatIfPresent(Material material, string propertyName, float value)
-		{
-			if (material.HasProperty(propertyName))
-			{
-				material.SetFloat(propertyName, value);
-			}
 		}
 	}
 }
