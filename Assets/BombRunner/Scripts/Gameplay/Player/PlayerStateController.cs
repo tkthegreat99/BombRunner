@@ -20,6 +20,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 		[FormerlySerializedAs("isInvulnerable")]
 		[SerializeField] private bool isTagImmune;
 		[SerializeField] private bool isTarget;
+		[SerializeField] private bool isTaunting;
+		[SerializeField] private bool isDashLocked;
 
 		public event Action Changed;
 
@@ -31,7 +33,9 @@ namespace BombRunner.Scripts.Gameplay.Player
 		public bool IsDashing => isDashing;
 		public bool IsTagImmune => isTagImmune;
 		public bool IsTarget => isTarget;
-		public bool CanDash => IsAlive;
+		public bool IsTaunting => isTaunting;
+		public bool IsDashLocked => isDashLocked;
+		public bool CanDash => IsAlive && !isTaunting && !isDashLocked;
 
 		public void SetPlayerLabel(string playerLabel)
 		{
@@ -71,6 +75,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 				isDashing = false;
 				isTagImmune = false;
 				isTarget = false;
+				isTaunting = false;
+				isDashLocked = false;
 			}
 
 			NotifyChanged();
@@ -109,6 +115,53 @@ namespace BombRunner.Scripts.Gameplay.Player
 			}
 
 			SetState(ref isTarget, value);
+		}
+
+		public void SetTaunting(bool value)
+		{
+			if (IsDowned && value)
+			{
+				return;
+			}
+
+			var changed = isTaunting != value;
+
+			if (value)
+			{
+				changed |= isMoving || isDashing;
+				isMoving = false;
+				isDashing = false;
+			}
+
+			isTaunting = value;
+
+			if (changed)
+			{
+				NotifyChanged();
+			}
+		}
+
+		public void SetDashLocked(bool value)
+		{
+			if (IsDowned && value)
+			{
+				return;
+			}
+
+			var changed = isDashLocked != value;
+
+			if (value)
+			{
+				changed |= isDashing;
+				isDashing = false;
+			}
+
+			isDashLocked = value;
+
+			if (changed)
+			{
+				NotifyChanged();
+			}
 		}
 
 		private void SetState(ref bool state, bool value)

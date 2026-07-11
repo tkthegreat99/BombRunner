@@ -59,6 +59,12 @@ namespace BombRunner.Scripts.Gameplay.Player
 				return;
 			}
 
+			if (stateController != null && stateController.IsTaunting)
+			{
+				stateController.SetMoving(false);
+				return;
+			}
+
 			if (dashController != null && dashController.IsDashing)
 			{
 				if (stateController != null)

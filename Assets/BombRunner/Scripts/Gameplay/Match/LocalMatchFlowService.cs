@@ -15,6 +15,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly BombTargetService bombTargetService;
 		private readonly GameBalanceSettings balanceSettings;
 		private readonly LocalPlayerCameraFollow cameraFollow;
+		private readonly LocalMatchFeedbackView matchFeedbackView;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
 		private PlayerStateController[] players;
 		private GameObject cameraFocusTarget;
@@ -26,12 +27,14 @@ namespace BombRunner.Scripts.Gameplay.Match
 			BombSpawnService bombSpawnService,
 			BombTargetService bombTargetService,
 			GameBalanceSettings balanceSettings,
-			LocalPlayerCameraFollow cameraFollow)
+			LocalPlayerCameraFollow cameraFollow,
+			LocalMatchFeedbackView matchFeedbackView)
 		{
 			this.bombSpawnService = bombSpawnService;
 			this.bombTargetService = bombTargetService;
 			this.balanceSettings = balanceSettings;
 			this.cameraFollow = cameraFollow;
+			this.matchFeedbackView = matchFeedbackView;
 		}
 
 		public void Initialize(PlayerStateController[] players)
@@ -94,7 +97,11 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 			var spawnPosition = bombSpawnService.GetLocalBombSpawnPosition(players);
 			FocusCameraOnSpawn(spawnPosition);
-			bombSpawnService.ShowLocalSpawnCue(players);
+			matchFeedbackView.ShowSpawnCue(
+				spawnPosition,
+				balanceSettings.SpawnCueRadius,
+				balanceSettings.SpawnCueHeight,
+				balanceSettings.SpawnCueDurationSeconds);
 
 			try
 			{
@@ -125,7 +132,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 				if (!isMatchEnded)
 				{
-					cameraFollow.SetTarget(GetCameraReturnTarget(), false);
+					cameraFollow.SetTarget(GetCameraReturnTarget(), true);
 					SetPlayersInputEnabled(true);
 				}
 
@@ -157,25 +164,12 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private async UniTask RunStartCountdownAsync(Vector3 spawnPosition, CancellationToken cancellationToken)
 		{
-			var countdownTextObject = CreateCountdownText(spawnPosition);
-			var countdownText = countdownTextObject.GetComponent<TextMesh>();
 			var countdown = Mathf.CeilToInt(balanceSettings.BombStartCountdownSeconds);
-
-			try
-			{
-				for (var i = countdown; i > 0; i--)
-				{
-					cancellationToken.ThrowIfCancellationRequested();
-					countdownText.text = i.ToString();
-					FaceCamera(countdownTextObject.transform);
-					Debug.Log($"Bomb starts in {i}");
-					await UniTask.Delay(TimeSpan.FromSeconds(1), cancellationToken: cancellationToken);
-				}
-			}
-			finally
-			{
-				UnityEngine.Object.Destroy(countdownTextObject);
-			}
+			await matchFeedbackView.ShowBombStartCountdownAsync(
+				spawnPosition,
+				countdown,
+				cameraFollow.transform,
+				cancellationToken);
 		}
 
 		private async UniTask DelaySecondsAsync(float seconds, CancellationToken cancellationToken)
@@ -191,33 +185,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 			cameraFocusTarget.transform.position = spawnPosition;
 			cameraFollow.SetTarget(cameraFocusTarget.transform, false);
 			Debug.Log("Local match flow: camera focused on next bomb spawn");
-		}
-
-		private GameObject CreateCountdownText(Vector3 spawnPosition)
-		{
-			var countdownTextObject = new GameObject("Temporary Bomb Start Countdown");
-			countdownTextObject.transform.position = spawnPosition + Vector3.up * 2.2f;
-			var textMesh = countdownTextObject.AddComponent<TextMesh>();
-			textMesh.anchor = TextAnchor.MiddleCenter;
-			textMesh.alignment = TextAlignment.Center;
-			textMesh.characterSize = 1.2f;
-			textMesh.fontSize = 96;
-			textMesh.color = new Color(1f, 0.85f, 0.12f, 1f);
-			FaceCamera(countdownTextObject.transform);
-			return countdownTextObject;
-		}
-
-		private void FaceCamera(Transform target)
-		{
-			var cameraTransform = cameraFollow.transform;
-			var direction = target.position - cameraTransform.position;
-
-			if (direction.sqrMagnitude <= 0.0001f)
-			{
-				return;
-			}
-
-			target.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
 		}
 
 		private void ClearCameraFocus()
@@ -268,6 +235,16 @@ namespace BombRunner.Scripts.Gameplay.Match
 				{
 					dashController.SetInputEnabled(shouldEnableInput);
 				}
+
+				if (player.TryGetComponent<PlayerTauntController>(out var tauntController))
+				{
+					tauntController.SetInputEnabled(shouldEnableInput);
+				}
+
+				if (!shouldEnableInput)
+				{
+					player.SetTaunting(false);
+				}
 			}
 		}
 
@@ -297,10 +274,11 @@ namespace BombRunner.Scripts.Gameplay.Match
 			bombSpawnService.DespawnLocalBomb(controller);
 			bombTargetService.ClearTarget();
 			ClearCameraFocus();
-			cameraFollow.SetTarget(GetCameraReturnTarget(), false);
+			cameraFollow.SetTarget(GetCameraReturnTarget(), true);
 
 			var winner = GetWinner();
 			var winnerLabel = winner != null ? winner.PlayerLabel : "None";
+			matchFeedbackView.ShowMatchEnded(winnerLabel, GetCameraReturnTarget(), cameraFollow.transform);
 			Debug.Log($"Local match flow: match ended. Winner: {winnerLabel}");
 		}
 

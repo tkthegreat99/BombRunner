@@ -119,6 +119,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 			stateController.SetDashing(false);
 			stateController.SetTagImmune(false);
 			stateController.SetTarget(false);
+			stateController.SetTaunting(false);
+			stateController.SetDashLocked(false);
 		}
 
 		private void SetInputEnabled(GameObject player, bool isInputEnabled)
@@ -131,6 +133,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 			if (player.TryGetComponent<PlayerDashController>(out var dashController))
 			{
 				dashController.SetInputEnabled(isInputEnabled);
+			}
+
+			if (player.TryGetComponent<PlayerTauntController>(out var tauntController))
+			{
+				tauntController.SetInputEnabled(isInputEnabled);
 			}
 		}
 	}

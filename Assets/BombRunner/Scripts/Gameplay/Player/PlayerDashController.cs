@@ -28,6 +28,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 		public bool IsDashing => isDashing;
 		public bool IsCoolingDown => isCoolingDown;
 		public bool IsDashReady => CanDash() && !isDashing && !isCoolingDown;
+		public bool IsDashLocked => stateController != null && stateController.IsDashLocked;
+		public bool IsTaunting => stateController != null && stateController.IsTaunting;
 		public float CooldownRemaining => isCoolingDown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
 
 		[Inject]
@@ -47,6 +49,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 		public void SetInputEnabled(bool isInputEnabled)
 		{
 			this.isInputEnabled = isInputEnabled;
+
+			if (!isInputEnabled && stateController != null)
+			{
+				stateController.SetDashing(false);
+			}
 		}
 
 		private void Awake()
@@ -116,7 +123,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 				var deltaTime = Time.deltaTime;
 				elapsedTime += deltaTime;
 
-				if (!CanDash())
+				if (!isInputEnabled || !CanDash())
 				{
 					break;
 				}

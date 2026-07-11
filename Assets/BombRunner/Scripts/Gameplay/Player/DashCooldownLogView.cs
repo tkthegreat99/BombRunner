@@ -31,14 +31,19 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 			previousReadyState = isReady;
 
-			// 임시 HUD 대용 로그. 실제 HUD는 프리팹 기반 View가 준비되면 교체한다.
 			if (isReady)
 			{
-				Debug.Log("Dash 준비 완료");
+				Debug.Log("Dash ready");
 				return;
 			}
 
-			Debug.Log($"Dash 쿨타임 시작: {dashController.CooldownRemaining:0.00}초");
+			if (dashController.IsDashLocked || dashController.IsTaunting)
+			{
+				Debug.Log("Dash unavailable");
+				return;
+			}
+
+			Debug.Log($"Dash cooldown started: {dashController.CooldownRemaining:0.00}s");
 		}
 	}
 }
