@@ -20,7 +20,7 @@ namespace BombRunner.Scripts.Bomb
 			this.bombState = bombState;
 		}
 
-		// 지금은 로컬 2인 검증용입니다. 이후 Host/Master가 타겟 변경을 확정하고 클라이언트는 표시만 갱신합니다.
+		// 임시 로컬 2인 검증용. 이후 Host/Master가 타겟 변경을 확정하고 클라이언트는 표시만 갱신.
 		public void Initialize(PlayerStateController localPlayer, PlayerStateController dummyPlayer)
 		{
 			this.localPlayer = localPlayer;
@@ -32,7 +32,7 @@ namespace BombRunner.Scripts.Bomb
 				return;
 			}
 
-			TrySetTarget(this.localPlayer);
+			TrySetAnyAliveTarget(null);
 		}
 
 		public bool TrySetTarget(PlayerStateController targetPlayer)
@@ -43,6 +43,11 @@ namespace BombRunner.Scripts.Bomb
 			}
 
 			if (targetPlayer != localPlayer && targetPlayer != dummyPlayer)
+			{
+				return false;
+			}
+
+			if (!targetPlayer.IsAlive)
 			{
 				return false;
 			}
@@ -58,6 +63,38 @@ namespace BombRunner.Scripts.Bomb
 			TargetChanged?.Invoke(targetPlayer);
 			Debug.Log($"Bomb target changed: {targetPlayer.PlayerLabel}");
 			return true;
+		}
+
+		public bool TrySetAnyAliveTarget(PlayerStateController excludedPlayer)
+		{
+			if (!isInitialized)
+			{
+				return false;
+			}
+
+			var hasLocalCandidate = localPlayer != excludedPlayer && localPlayer.IsAlive;
+			var hasDummyCandidate = dummyPlayer != excludedPlayer && dummyPlayer.IsAlive;
+
+			if (!hasLocalCandidate && !hasDummyCandidate)
+			{
+				bombState.SetTargetPlayer(null);
+				ApplyTargetFlags(null);
+				TargetChanged?.Invoke(null);
+				Debug.Log("Bomb target cleared: no alive target");
+				return false;
+			}
+
+			if (hasLocalCandidate && hasDummyCandidate && UnityEngine.Random.value >= 0.5f)
+			{
+				return TrySetTarget(dummyPlayer);
+			}
+
+			if (hasLocalCandidate)
+			{
+				return TrySetTarget(localPlayer);
+			}
+
+			return TrySetTarget(dummyPlayer);
 		}
 
 		private void ApplyTargetFlags(PlayerStateController targetPlayer)

@@ -5,9 +5,6 @@ namespace BombRunner.Scripts.Bomb
 {
 	public sealed class BombCreatureController : MonoBehaviour
 	{
-		private const float RoundDuration = 15f;
-		private const float WarningThreshold = 10f;
-		private const float OverdriveThreshold = 5f;
 		private const float Acceleration = 15f;
 		private const float Deceleration = 10f;
 		private const float RotationSpeed = 720f;
@@ -16,17 +13,24 @@ namespace BombRunner.Scripts.Bomb
 		private const float WarningPulseSpeed = 7f;
 		private const float WarningPulseScale = 0.16f;
 
+		[SerializeField] private Vector2 calmDurationRange = new(4f, 6f);
+		[SerializeField] private Vector2 warningDurationRange = new(3f, 5f);
+		[SerializeField] private Vector2 overdriveDurationRange = new(2f, 4f);
+		[SerializeField] private float calmMoveSpeed = 5.2f;
+		[SerializeField] private float warningMoveSpeed = 6.8f;
+		[SerializeField] private float overdriveMoveSpeed = 8.4f;
+
 		private BombState bombState;
 		private BombTargetService bombTargetService;
 		private PlayerStateController localPlayer;
 		private PlayerStateController dummyPlayer;
 		private Vector3 velocity;
 		private Vector3 baseScale;
-		private float remainingTime;
+		private float phaseRemainingTime;
 		private bool isInitialized;
 		private bool hasExploded;
 
-		// 임시 폭탄 크리처입니다. 이후 네트워크 스폰 프리팹과 풀링 대상으로 교체합니다.
+		// 임시 폭탄 크리처. 이후 네트워크 스폰 프리팹과 풀링 대상으로 교체.
 		public void Initialize(
 			BombState bombState,
 			BombTargetService bombTargetService,
@@ -39,7 +43,7 @@ namespace BombRunner.Scripts.Bomb
 			this.dummyPlayer = dummyPlayer;
 			velocity = Vector3.zero;
 			baseScale = transform.localScale;
-			remainingTime = RoundDuration;
+			phaseRemainingTime = 0f;
 			hasExploded = false;
 			isInitialized = bombState != null
 				&& bombTargetService != null
@@ -51,8 +55,7 @@ namespace BombRunner.Scripts.Bomb
 				return;
 			}
 
-			this.bombState.SetTimerPhase(BombTimerPhase.Calm);
-			Debug.Log("Bomb timer phase: Calm");
+			SetTimerPhase(BombTimerPhase.Calm);
 		}
 
 		private void Update()
@@ -75,40 +78,84 @@ namespace BombRunner.Scripts.Bomb
 
 		private void UpdateTimer()
 		{
-			remainingTime -= Time.deltaTime;
+			phaseRemainingTime -= Time.deltaTime;
 
-			var nextPhase = GetTimerPhase(remainingTime);
-
-			if (nextPhase != bombState.TimerPhase)
-			{
-				bombState.SetTimerPhase(nextPhase);
-				Debug.Log($"Bomb timer phase: {nextPhase}");
-			}
-
-			if (remainingTime > 0f)
+			if (phaseRemainingTime > 0f)
 			{
 				return;
 			}
 
-			hasExploded = true;
-			transform.localScale = baseScale;
-			LogPlayersInExplosionRadius();
-			ShowTemporaryExplosionRadius();
+			AdvanceTimerPhaseOrExplode();
 		}
 
-		private BombTimerPhase GetTimerPhase(float time)
+		private void AdvanceTimerPhaseOrExplode()
 		{
-			if (time > WarningThreshold)
+			if (bombState.TimerPhase == BombTimerPhase.Calm)
 			{
-				return BombTimerPhase.Calm;
+				SetTimerPhase(BombTimerPhase.Warning);
+				return;
 			}
 
-			if (time > OverdriveThreshold)
+			if (bombState.TimerPhase == BombTimerPhase.Warning)
 			{
-				return BombTimerPhase.Warning;
+				SetTimerPhase(BombTimerPhase.Overdrive);
+				return;
 			}
 
-			return BombTimerPhase.Overdrive;
+			Explode();
+		}
+
+		private void SetTimerPhase(BombTimerPhase timerPhase)
+		{
+			bombState.SetTimerPhase(timerPhase);
+			phaseRemainingTime = GetRandomPhaseDuration(timerPhase);
+			bombState.SetMoveSpeed(GetPhaseMoveSpeed(timerPhase));
+			Debug.Log($"Bomb timer phase: {timerPhase}, duration: {phaseRemainingTime:0.00}s");
+		}
+
+		private float GetRandomPhaseDuration(BombTimerPhase timerPhase)
+		{
+			switch (timerPhase)
+			{
+				case BombTimerPhase.Calm:
+					return GetRandomRangeValue(calmDurationRange);
+				case BombTimerPhase.Warning:
+					return GetRandomRangeValue(warningDurationRange);
+				case BombTimerPhase.Overdrive:
+					return GetRandomRangeValue(overdriveDurationRange);
+				default:
+					return 0f;
+			}
+		}
+
+		private float GetRandomRangeValue(Vector2 range)
+		{
+			var min = Mathf.Min(range.x, range.y);
+			var max = Mathf.Max(range.x, range.y);
+			return UnityEngine.Random.Range(min, max);
+		}
+
+		private float GetPhaseMoveSpeed(BombTimerPhase timerPhase)
+		{
+			switch (timerPhase)
+			{
+				case BombTimerPhase.Calm:
+					return calmMoveSpeed;
+				case BombTimerPhase.Warning:
+					return warningMoveSpeed;
+				case BombTimerPhase.Overdrive:
+					return overdriveMoveSpeed;
+				default:
+					return calmMoveSpeed;
+			}
+		}
+
+		private void Explode()
+		{
+			hasExploded = true;
+			transform.localScale = baseScale;
+			ResolveClosestPlayerDown();
+			ShowTemporaryExplosionRadius();
 		}
 
 		private void ChaseTarget()
@@ -171,7 +218,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private void UpdateTemporaryWarningPulse()
 		{
-			// 임시 Warning 연출입니다. 이후 Bomb Animator 또는 전용 VFX/스케일 Tween으로 교체합니다.
+			// 임시 Warning 연출. 이후 Bomb Animator 또는 전용 VFX/Tween으로 교체.
 			if (bombState.TimerPhase != BombTimerPhase.Warning)
 			{
 				transform.localScale = baseScale;
@@ -182,22 +229,63 @@ namespace BombRunner.Scripts.Bomb
 			transform.localScale = baseScale * pulse;
 		}
 
-		private void LogPlayersInExplosionRadius()
+		private void ResolveClosestPlayerDown()
 		{
-			var targetPlayer = bombTargetService.TargetPlayer;
+			var closestPlayer = FindClosestAlivePlayerInExplosionRadius();
 
+			if (closestPlayer == null)
+			{
+				Debug.Log("Bomb exploded: no alive player in explosion radius");
+				return;
+			}
+
+			closestPlayer.SetAlive(false);
+			closestPlayer.SetTarget(false);
+			bombTargetService.TrySetAnyAliveTarget(closestPlayer);
+			Debug.Log($"Bomb exploded: {closestPlayer.PlayerLabel} downed as closest alive player");
+		}
+
+		private PlayerStateController FindClosestAlivePlayerInExplosionRadius()
+		{
 			var center = transform.position;
 			var radiusSqr = bombState.ExplosionRadius * bombState.ExplosionRadius;
-			var hitLocal = IsPlayerInRadius(localPlayer, center, radiusSqr);
-			var hitDummy = IsPlayerInRadius(dummyPlayer, center, radiusSqr);
+			var closestPlayer = default(PlayerStateController);
+			var closestDistanceSqr = float.MaxValue;
 
-			var targetLabel = targetPlayer != null ? targetPlayer.PlayerLabel : "None";
-			Debug.Log($"Bomb exploded at bomb position. Target: {targetLabel}, In radius - Local Player: {hitLocal}, Dummy Player: {hitDummy}");
+			TrySelectClosestPlayer(localPlayer, center, radiusSqr, ref closestPlayer, ref closestDistanceSqr);
+			TrySelectClosestPlayer(dummyPlayer, center, radiusSqr, ref closestPlayer, ref closestDistanceSqr);
+
+			return closestPlayer;
+		}
+
+		private void TrySelectClosestPlayer(
+			PlayerStateController player,
+			Vector3 center,
+			float radiusSqr,
+			ref PlayerStateController closestPlayer,
+			ref float closestDistanceSqr)
+		{
+			if (player == null || !player.IsAlive)
+			{
+				return;
+			}
+
+			var offset = player.transform.position - center;
+			offset.y = 0f;
+			var distanceSqr = offset.sqrMagnitude;
+
+			if (distanceSqr > radiusSqr || distanceSqr >= closestDistanceSqr)
+			{
+				return;
+			}
+
+			closestDistanceSqr = distanceSqr;
+			closestPlayer = player;
 		}
 
 		private void ShowTemporaryExplosionRadius()
 		{
-			// 임시 폭발 범위 확인용 Sphere입니다. 이후 ExplosionRing/VFX 풀 오브젝트로 교체합니다.
+			// 임시 폭발 범위 확인용 Sphere. 이후 ExplosionRing/VFX 풀 오브젝트로 교체.
 			var preview = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 			preview.name = "Temporary Explosion Radius Preview";
 			preview.transform.position = transform.position;
@@ -252,18 +340,6 @@ namespace BombRunner.Scripts.Bomb
 			{
 				material.SetFloat(propertyName, value);
 			}
-		}
-
-		private bool IsPlayerInRadius(PlayerStateController player, Vector3 center, float radiusSqr)
-		{
-			if (player == null || !player.IsAlive)
-			{
-				return false;
-			}
-
-			var offset = player.transform.position - center;
-			offset.y = 0f;
-			return offset.sqrMagnitude <= radiusSqr;
 		}
 	}
 }
