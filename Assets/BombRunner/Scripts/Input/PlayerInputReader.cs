@@ -10,6 +10,7 @@ namespace BombRunner.Scripts.Input
 		private InputActionMap playerActionMap;
 		private InputAction moveAction;
 		private InputAction dashAction;
+		private InputAction tauntAction;
 		private bool isReady;
 
 		private enum InputActionMapKind
@@ -20,7 +21,8 @@ namespace BombRunner.Scripts.Input
 		private enum PlayerInputAction
 		{
 			Move,
-			Dash
+			Dash,
+			Taunt
 		}
 
 		public Vector2 Move
@@ -38,6 +40,15 @@ namespace BombRunner.Scripts.Input
 			{
 				EnsureReady();
 				return dashAction.WasPressedThisFrame();
+			}
+		}
+
+		public bool TauntHeld
+		{
+			get
+			{
+				EnsureReady();
+				return tauntAction != null && tauntAction.IsPressed();
 			}
 		}
 
@@ -90,6 +101,7 @@ namespace BombRunner.Scripts.Input
 			playerActionMap = inputActions.FindActionMap(InputActionMapKind.Player.ToString(), true);
 			moveAction = playerActionMap.FindAction(nameof(PlayerInputAction.Move), true);
 			dashAction = playerActionMap.FindAction(nameof(PlayerInputAction.Dash), true);
+			tauntAction = playerActionMap.FindAction(nameof(PlayerInputAction.Taunt), false);
 			isReady = true;
 		}
 	}

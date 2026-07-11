@@ -14,5 +14,7 @@ namespace BombRunner.Scripts.Input
 		public Vector2 Move => inputReader.Move;
 
 		public bool DashPressed => inputReader.DashPressedThisFrame;
+
+		public bool TauntHeld => inputReader.TauntHeld;
 	}
 }

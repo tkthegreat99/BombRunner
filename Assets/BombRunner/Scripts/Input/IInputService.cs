@@ -9,5 +9,7 @@ namespace BombRunner.Scripts.Input
 
 		// 대시를 시작해야 하는 단발 입력. 누른 프레임에만 true가 된다.
 		bool DashPressed { get; }
+
+		bool TauntHeld { get; }
 	}
 }
