@@ -11,7 +11,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 	public sealed class LocalTargetTossPrototype : ITickable, IDisposable
 	{
 		private const float TossDistanceSqr = 1.44f;
-		private static readonly TimeSpan InvulnerableDuration = TimeSpan.FromSeconds(5);
+		private static readonly TimeSpan TagImmuneDuration = TimeSpan.FromSeconds(3);
 
 		private readonly BombTargetService bombTargetService;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
@@ -25,7 +25,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.bombTargetService = bombTargetService;
 		}
 
-		// 임시 로컬 타겟 토스 검증용입니다. 이후 타겟 변경 확정은 Host/Master 권한 서비스와 RPC로 이동합니다.
+		// 임시 로컬 태그 검증용. 이후 타겟 변경 확정은 Host/Master 권한 서비스와 RPC로 이동.
 		public void Initialize(PlayerStateController localPlayer, PlayerStateController dummyPlayer)
 		{
 			this.localPlayer = localPlayer;
@@ -91,7 +91,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private void TryTransferTarget(PlayerStateController fromPlayer, PlayerStateController toPlayer)
 		{
-			if (fromPlayer == null || toPlayer == null || toPlayer.IsInvulnerable)
+			if (fromPlayer == null || toPlayer == null || toPlayer.IsTagImmune)
 			{
 				return;
 			}
@@ -101,17 +101,17 @@ namespace BombRunner.Scripts.Gameplay.Match
 				return;
 			}
 
-			RunInvulnerableWindowAsync(fromPlayer, cancellationTokenSource.Token).Forget();
-			Debug.Log($"Target toss: {fromPlayer.PlayerLabel} -> {toPlayer.PlayerLabel}, {fromPlayer.PlayerLabel} 5초 면역");
+			RunTagImmuneWindowAsync(fromPlayer, cancellationTokenSource.Token).Forget();
+			Debug.Log($"Target toss: {fromPlayer.PlayerLabel} -> {toPlayer.PlayerLabel}, {fromPlayer.PlayerLabel} 3초 태그 면역");
 		}
 
-		private async UniTaskVoid RunInvulnerableWindowAsync(PlayerStateController player, CancellationToken cancellationToken)
+		private async UniTaskVoid RunTagImmuneWindowAsync(PlayerStateController player, CancellationToken cancellationToken)
 		{
-			player.SetInvulnerable(true);
+			player.SetTagImmune(true);
 
 			try
 			{
-				await UniTask.Delay(InvulnerableDuration, cancellationToken: cancellationToken);
+				await UniTask.Delay(TagImmuneDuration, cancellationToken: cancellationToken);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{
@@ -120,7 +120,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			{
 				if (player != null)
 				{
-					player.SetInvulnerable(false);
+					player.SetTagImmune(false);
 				}
 			}
 		}

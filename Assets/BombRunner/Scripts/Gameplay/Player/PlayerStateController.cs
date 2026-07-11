@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace BombRunner.Scripts.Gameplay.Player
 {
@@ -9,7 +10,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 		[SerializeField] private bool isAlive = true;
 		[SerializeField] private bool isMoving;
 		[SerializeField] private bool isDashing;
-		[SerializeField] private bool isInvulnerable;
+		[FormerlySerializedAs("isInvulnerable")]
+		[SerializeField] private bool isTagImmune;
 		[SerializeField] private bool isTarget;
 
 		public event Action Changed;
@@ -18,7 +20,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 		public bool IsAlive => isAlive;
 		public bool IsMoving => isMoving;
 		public bool IsDashing => isDashing;
-		public bool IsInvulnerable => isInvulnerable;
+		public bool IsTagImmune => isTagImmune;
 		public bool IsTarget => isTarget;
 
 		public void SetPlayerLabel(string playerLabel)
@@ -47,9 +49,9 @@ namespace BombRunner.Scripts.Gameplay.Player
 			SetState(ref isDashing, value);
 		}
 
-		public void SetInvulnerable(bool value)
+		public void SetTagImmune(bool value)
 		{
-			SetState(ref isInvulnerable, value);
+			SetState(ref isTagImmune, value);
 		}
 
 		public void SetTarget(bool value)

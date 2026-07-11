@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace BombRunner.Scripts.Gameplay.Player
 {
@@ -6,7 +7,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 	public sealed class PlayerTargetIndicatorView : MonoBehaviour
 	{
 		[SerializeField] private GameObject targetIndicatorRoot;
-		[SerializeField] private GameObject invulnerableIndicatorRoot;
+		[FormerlySerializedAs("invulnerableIndicatorRoot")]
+		[SerializeField] private GameObject tagImmuneIndicatorRoot;
 
 		private PlayerStateController stateController;
 
@@ -35,9 +37,9 @@ namespace BombRunner.Scripts.Gameplay.Player
 				targetIndicatorRoot.SetActive(isAlive && stateController.IsTarget);
 			}
 
-			if (invulnerableIndicatorRoot != null)
+			if (tagImmuneIndicatorRoot != null)
 			{
-				invulnerableIndicatorRoot.SetActive(isAlive && stateController.IsInvulnerable);
+				tagImmuneIndicatorRoot.SetActive(isAlive && stateController.IsTagImmune);
 			}
 		}
 	}

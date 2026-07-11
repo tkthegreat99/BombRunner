@@ -96,7 +96,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 			stateController.SetAlive(true);
 			stateController.SetMoving(false);
 			stateController.SetDashing(false);
-			stateController.SetInvulnerable(false);
+			stateController.SetTagImmune(false);
 			stateController.SetTarget(false);
 		}
 
