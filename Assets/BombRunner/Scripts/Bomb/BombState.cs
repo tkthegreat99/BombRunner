@@ -8,8 +8,8 @@ namespace BombRunner.Scripts.Bomb
 		public BombTimerPhase TimerPhase { get; private set; } = BombTimerPhase.Calm;
 		public PlayerStateController TargetPlayer { get; private set; }
 		public int RageStack { get; private set; }
-		public float MoveSpeed { get; private set; } = 6.8f;
-		public float ExplosionRadius { get; private set; } = 2.5f;
+		public float MoveSpeed { get; private set; }
+		public float ExplosionRadius { get; private set; }
 
 		public void SetTimerPhase(BombTimerPhase timerPhase)
 		{

@@ -7,8 +7,7 @@ namespace BombRunner.Scripts.Bomb
 	public sealed class BombTargetService
 	{
 		private readonly BombState bombState;
-		private PlayerStateController localPlayer;
-		private PlayerStateController dummyPlayer;
+		private PlayerStateController[] players;
 		private bool isInitialized;
 
 		public event Action<PlayerStateController> TargetChanged;
@@ -20,12 +19,11 @@ namespace BombRunner.Scripts.Bomb
 			this.bombState = bombState;
 		}
 
-		// 임시 로컬 2인 검증용. 이후 Host/Master가 타겟 변경을 확정하고 클라이언트는 표시만 갱신.
-		public void Initialize(PlayerStateController localPlayer, PlayerStateController dummyPlayer)
+		// 임시 로컬 검증용. 이후 Host/Master가 타겟 변경을 확정하고 클라이언트는 표시만 갱신.
+		public void Initialize(PlayerStateController[] players)
 		{
-			this.localPlayer = localPlayer;
-			this.dummyPlayer = dummyPlayer;
-			isInitialized = localPlayer != null && dummyPlayer != null;
+			this.players = players;
+			isInitialized = players != null && players.Length > 0;
 
 			if (!isInitialized)
 			{
@@ -42,12 +40,7 @@ namespace BombRunner.Scripts.Bomb
 				return false;
 			}
 
-			if (targetPlayer != localPlayer && targetPlayer != dummyPlayer)
-			{
-				return false;
-			}
-
-			if (!targetPlayer.IsAlive)
+			if (!ContainsPlayer(targetPlayer) || !targetPlayer.IsAlive)
 			{
 				return false;
 			}
@@ -72,35 +65,96 @@ namespace BombRunner.Scripts.Bomb
 				return false;
 			}
 
-			var hasLocalCandidate = localPlayer != excludedPlayer && localPlayer.IsAlive;
-			var hasDummyCandidate = dummyPlayer != excludedPlayer && dummyPlayer.IsAlive;
+			var candidateCount = CountAliveCandidates(excludedPlayer);
 
-			if (!hasLocalCandidate && !hasDummyCandidate)
+			if (candidateCount <= 0)
 			{
-				bombState.SetTargetPlayer(null);
-				ApplyTargetFlags(null);
-				TargetChanged?.Invoke(null);
-				Debug.Log("Bomb target cleared: no alive target");
+				ClearTarget();
 				return false;
 			}
 
-			if (hasLocalCandidate && hasDummyCandidate && UnityEngine.Random.value >= 0.5f)
+			var selectedIndex = UnityEngine.Random.Range(0, candidateCount);
+			var currentIndex = 0;
+
+			for (var i = 0; i < players.Length; i++)
 			{
-				return TrySetTarget(dummyPlayer);
+				var player = players[i];
+
+				if (player == null || player == excludedPlayer || !player.IsAlive)
+				{
+					continue;
+				}
+
+				if (currentIndex == selectedIndex)
+				{
+					return TrySetTarget(player);
+				}
+
+				currentIndex++;
 			}
 
-			if (hasLocalCandidate)
+			ClearTarget();
+			return false;
+		}
+
+		public void ClearTarget()
+		{
+			if (!isInitialized)
 			{
-				return TrySetTarget(localPlayer);
+				return;
 			}
 
-			return TrySetTarget(dummyPlayer);
+			bombState.SetTargetPlayer(null);
+			ApplyTargetFlags(null);
+			TargetChanged?.Invoke(null);
+			Debug.Log("Bomb target cleared");
+		}
+
+		private bool ContainsPlayer(PlayerStateController targetPlayer)
+		{
+			for (var i = 0; i < players.Length; i++)
+			{
+				if (players[i] == targetPlayer)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private int CountAliveCandidates(PlayerStateController excludedPlayer)
+		{
+			var candidateCount = 0;
+
+			for (var i = 0; i < players.Length; i++)
+			{
+				var player = players[i];
+
+				if (player == null || player == excludedPlayer || !player.IsAlive)
+				{
+					continue;
+				}
+
+				candidateCount++;
+			}
+
+			return candidateCount;
 		}
 
 		private void ApplyTargetFlags(PlayerStateController targetPlayer)
 		{
-			localPlayer.SetTarget(localPlayer == targetPlayer);
-			dummyPlayer.SetTarget(dummyPlayer == targetPlayer);
+			for (var i = 0; i < players.Length; i++)
+			{
+				var player = players[i];
+
+				if (player == null)
+				{
+					continue;
+				}
+
+				player.SetTarget(player == targetPlayer);
+			}
 		}
 	}
 }

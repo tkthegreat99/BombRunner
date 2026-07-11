@@ -1,3 +1,4 @@
+using BombRunner.Scripts.Data;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -8,13 +9,18 @@ namespace BombRunner.Scripts.Gameplay.Player
 	{
 		private readonly IObjectResolver objectResolver;
 		private readonly PlayerSpawnSettings spawnSettings;
+		private readonly GameBalanceSettings balanceSettings;
+		private readonly GameObject[] dummyPlayers = new GameObject[2];
 		private GameObject localPlayer;
-		private GameObject dummyPlayer;
 
-		public PlayerSpawnService(IObjectResolver objectResolver, PlayerSpawnSettings spawnSettings)
+		public PlayerSpawnService(
+			IObjectResolver objectResolver,
+			PlayerSpawnSettings spawnSettings,
+			GameBalanceSettings balanceSettings)
 		{
 			this.objectResolver = objectResolver;
 			this.spawnSettings = spawnSettings;
+			this.balanceSettings = balanceSettings;
 		}
 
 		public GameObject SpawnLocalPlayer()
@@ -26,11 +32,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 			if (spawnSettings.PlayerPrefab == null)
 			{
-				Debug.LogError("PlayerSpawnSettings에 플레이어 프리팹 연결이 필요합니다.");
+				Debug.LogError("PlayerSpawnSettings에 PlayerPrefab 연결이 필요합니다.");
 				return null;
 			}
 
-			// 이번 단계는 로컬 검증용 Instantiate이며, 네트워크 스폰 전환 지점을 이 서비스로 제한한다.
+			// 임시 로컬 검증용 Instantiate. 이후 네트워크 스폰 서비스로 교체.
 			localPlayer = objectResolver.Instantiate(
 				spawnSettings.PlayerPrefab,
 				spawnSettings.SpawnPosition,
@@ -42,38 +48,52 @@ namespace BombRunner.Scripts.Gameplay.Player
 			return localPlayer;
 		}
 
-		public GameObject SpawnDummyPlayer()
+		public GameObject[] SpawnDummyPlayers()
 		{
-			if (dummyPlayer != null)
+			if (dummyPlayers[0] != null && dummyPlayers[1] != null)
 			{
-				return dummyPlayer;
+				return dummyPlayers;
 			}
 
 			if (spawnSettings.PlayerPrefab == null)
 			{
-				Debug.LogError("PlayerSpawnSettings에 플레이어 프리팹 연결이 필요합니다.");
-				return null;
+				Debug.LogError("PlayerSpawnSettings에 PlayerPrefab 연결이 필요합니다.");
+				return dummyPlayers;
 			}
 
-			// 임시 2인 로컬 검증용 더미입니다. 실제 멀티플레이 스폰이 들어오면 Network Spawn 기반으로 교체합니다.
-			var dummyPosition = spawnSettings.SpawnPosition + new Vector3(3f, 0f, 0f);
-			dummyPlayer = objectResolver.Instantiate(
+			SpawnDummyPlayer(0, spawnSettings.SpawnPosition + new Vector3(3f, 0f, 0f), "Dummy Player 1");
+			SpawnDummyPlayer(1, spawnSettings.SpawnPosition + new Vector3(-3f, 0f, 0f), "Dummy Player 2");
+			return dummyPlayers;
+		}
+
+		private void SpawnDummyPlayer(int index, Vector3 spawnPosition, string playerLabel)
+		{
+			if (dummyPlayers[index] != null)
+			{
+				return;
+			}
+
+			// 임시 로컬 검증용 더미. 이후 실제 멀티플레이 스폰은 Network Spawn 기반으로 교체.
+			var dummyPlayer = objectResolver.Instantiate(
 				spawnSettings.PlayerPrefab,
-				dummyPosition,
+				spawnPosition,
 				Quaternion.identity);
-			dummyPlayer.name = "Dummy Player";
+			dummyPlayer.name = playerLabel;
 
 			ApplySettings(dummyPlayer);
-			ApplyPlayerState(dummyPlayer, "Dummy Player");
+			ApplyPlayerState(dummyPlayer, playerLabel);
 			SetInputEnabled(dummyPlayer, false);
-			return dummyPlayer;
+			dummyPlayers[index] = dummyPlayer;
 		}
 
 		private void ApplySettings(GameObject player)
 		{
 			if (player.TryGetComponent<PlayerMovementController>(out var movementController))
 			{
-				movementController.Initialize(spawnSettings.MoveSpeed, spawnSettings.RotationSpeed);
+				movementController.Initialize(
+					spawnSettings.MoveSpeed,
+					spawnSettings.RotationSpeed,
+					balanceSettings.DownedMoveSpeedMultiplier);
 			}
 
 			if (player.TryGetComponent<PlayerDashController>(out var dashController))
@@ -83,6 +103,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 					spawnSettings.DashDuration,
 					spawnSettings.DashCooldown);
 			}
+
 		}
 
 		private void ApplyPlayerState(GameObject player, string playerLabel)
@@ -93,7 +114,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 			}
 
 			stateController.SetPlayerLabel(playerLabel);
-			stateController.SetAlive(true);
+			stateController.SetLifeState(PlayerLifeState.Alive);
 			stateController.SetMoving(false);
 			stateController.SetDashing(false);
 			stateController.SetTagImmune(false);

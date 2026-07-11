@@ -1,5 +1,6 @@
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
+using BombRunner.Scripts.Data;
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
@@ -15,6 +16,7 @@ namespace BombRunner.Scripts.App
 		[SerializeField] private PlayerInputReader playerInputReader;
 		[SerializeField] private PlayerSpawnSettings playerSpawnSettings;
 		[SerializeField] private BombSpawnSettings bombSpawnSettings;
+		[SerializeField] private GameBalanceSettings gameBalanceSettings;
 		[SerializeField] private LocalPlayerCameraFollow cameraFollow;
 		[SerializeField] private DashCooldownLogView dashCooldownLogView;
 
@@ -29,7 +31,7 @@ namespace BombRunner.Scripts.App
 
 			if (activeInputReader == null)
 			{
-				Debug.LogError("GameLifetimeScope에 PlayerInputReader가 필요합니다.");
+				Debug.LogError("GameLifetimeScope requires PlayerInputReader.");
 				return;
 			}
 
@@ -42,7 +44,7 @@ namespace BombRunner.Scripts.App
 
 			if (activeSpawnSettings == null)
 			{
-				Debug.LogError("PlayerSpawnSettings를 찾을 수 없습니다. Resources/PlayerSpawnSettings 연결이 필요합니다.");
+				Debug.LogError("PlayerSpawnSettings is missing. Check Resources/PlayerSpawnSettings.");
 				return;
 			}
 
@@ -55,8 +57,21 @@ namespace BombRunner.Scripts.App
 
 			if (activeBombSpawnSettings == null || activeBombSpawnSettings.BombPrefab == null)
 			{
-				Debug.LogError("BombSpawnSettings 또는 BombPrefab을 찾을 수 없습니다. Resources/BombSpawnSettings 연결이 필요합니다.");
+				Debug.LogError("BombSpawnSettings or BombPrefab is missing. Check Resources/BombSpawnSettings.");
 				return;
+			}
+
+			var activeBalanceSettings = gameBalanceSettings;
+
+			if (activeBalanceSettings == null)
+			{
+				activeBalanceSettings = Resources.Load<GameBalanceSettings>(GameBalanceSettingsResourcePath.DefaultSettings);
+			}
+
+			if (activeBalanceSettings == null)
+			{
+				activeBalanceSettings = ScriptableObject.CreateInstance<GameBalanceSettings>();
+				Debug.LogWarning("GameBalanceSettings is missing. Runtime defaults will be used.");
 			}
 
 			if (cameraFollow == null)
@@ -71,25 +86,27 @@ namespace BombRunner.Scripts.App
 
 			if (cameraFollow == null || dashCooldownLogView == null)
 			{
-				Debug.LogError("Game Scene 테스트 컴포넌트 연결이 필요합니다. CameraFollow와 DashCooldownLogView를 확인하세요.");
+				Debug.LogError("Game Scene test components are missing. Check CameraFollow and DashCooldownLogView.");
 				return;
 			}
 
-			// Game Scene 동안 사용하는 입력, 스폰, 폭탄 추적, 로컬 타겟 토스 검증 흐름을 등록합니다.
 			builder.RegisterComponent(activeInputReader);
 			builder.RegisterComponent(cameraFollow);
 			builder.RegisterComponent(dashCooldownLogView);
 			builder.RegisterInstance(activeSpawnSettings);
 			builder.RegisterInstance(activeBombSpawnSettings);
+			builder.RegisterInstance(activeBalanceSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
 			builder.Register<BombState>(Lifetime.Scoped);
 			builder.Register<BombTargetService>(Lifetime.Scoped);
 			builder.Register<BombSpawnService>(Lifetime.Scoped);
+			builder.Register<LocalMatchFlowService>(Lifetime.Scoped);
+			builder.Register<LocalPlayerSeparationService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalTargetTossPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.RegisterEntryPoint<StageManager>(Lifetime.Scoped);
 
-			Debug.Log("GameLifetimeScope 등록 완료: 로컬 플레이어, 더미, 폭탄 추적 루프 준비");
+			Debug.Log("GameLifetimeScope registration complete: local prototype match loop ready.");
 		}
 	}
 }

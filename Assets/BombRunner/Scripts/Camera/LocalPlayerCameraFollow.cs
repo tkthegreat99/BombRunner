@@ -18,10 +18,15 @@ namespace BombRunner.Scripts.Camera
 
 		public void SetTarget(Transform target)
 		{
+			SetTarget(target, snapOnTargetAssigned);
+		}
+
+		public void SetTarget(Transform target, bool snapToTarget)
+		{
 			this.target = target;
 			ApplyCameraAngle();
 
-			if (target == null || !snapOnTargetAssigned)
+			if (target == null || !snapToTarget)
 			{
 				return;
 			}

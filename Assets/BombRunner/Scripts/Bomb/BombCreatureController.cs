@@ -1,3 +1,5 @@
+using System;
+using BombRunner.Scripts.Data;
 using BombRunner.Scripts.Gameplay.Player;
 using UnityEngine;
 
@@ -13,54 +15,52 @@ namespace BombRunner.Scripts.Bomb
 		private const float WarningPulseSpeed = 7f;
 		private const float WarningPulseScale = 0.16f;
 
-		[SerializeField] private Vector2 calmDurationRange = new(4f, 6f);
-		[SerializeField] private Vector2 warningDurationRange = new(3f, 5f);
-		[SerializeField] private Vector2 overdriveDurationRange = new(2f, 4f);
-		[SerializeField] private float calmMoveSpeed = 5.2f;
-		[SerializeField] private float warningMoveSpeed = 6.8f;
-		[SerializeField] private float overdriveMoveSpeed = 8.4f;
-
 		private BombState bombState;
 		private BombTargetService bombTargetService;
-		private PlayerStateController localPlayer;
-		private PlayerStateController dummyPlayer;
+		private GameBalanceSettings balanceSettings;
+		private PlayerStateController[] players;
 		private Vector3 velocity;
 		private Vector3 baseScale;
 		private float phaseRemainingTime;
 		private bool isInitialized;
+		private bool isActivated;
 		private bool hasExploded;
+
+		public event Action<BombCreatureController, PlayerStateController> Exploded;
 
 		// 임시 폭탄 크리처. 이후 네트워크 스폰 프리팹과 풀링 대상으로 교체.
 		public void Initialize(
 			BombState bombState,
 			BombTargetService bombTargetService,
-			PlayerStateController localPlayer,
-			PlayerStateController dummyPlayer)
+			GameBalanceSettings balanceSettings,
+			PlayerStateController[] players)
 		{
 			this.bombState = bombState;
 			this.bombTargetService = bombTargetService;
-			this.localPlayer = localPlayer;
-			this.dummyPlayer = dummyPlayer;
+			this.balanceSettings = balanceSettings;
+			this.players = players;
 			velocity = Vector3.zero;
 			baseScale = transform.localScale;
 			phaseRemainingTime = 0f;
+			isActivated = false;
 			hasExploded = false;
 			isInitialized = bombState != null
 				&& bombTargetService != null
-				&& localPlayer != null
-				&& dummyPlayer != null;
+				&& balanceSettings != null
+				&& players != null
+				&& players.Length > 0;
 
 			if (!isInitialized)
 			{
 				return;
 			}
 
-			SetTimerPhase(BombTimerPhase.Calm);
+			bombState.SetExplosionRadius(balanceSettings.ExplosionRadius);
 		}
 
 		private void Update()
 		{
-			if (!isInitialized || hasExploded)
+			if (!isInitialized || !isActivated || hasExploded)
 			{
 				return;
 			}
@@ -74,6 +74,17 @@ namespace BombRunner.Scripts.Bomb
 
 			ChaseTarget();
 			UpdateTemporaryWarningPulse();
+		}
+
+		public void Activate()
+		{
+			if (!isInitialized || isActivated || hasExploded)
+			{
+				return;
+			}
+
+			isActivated = true;
+			SetTimerPhase(BombTimerPhase.Calm);
 		}
 
 		private void UpdateTimer()
@@ -118,11 +129,11 @@ namespace BombRunner.Scripts.Bomb
 			switch (timerPhase)
 			{
 				case BombTimerPhase.Calm:
-					return GetRandomRangeValue(calmDurationRange);
+					return GetRandomRangeValue(balanceSettings.CalmDurationRange);
 				case BombTimerPhase.Warning:
-					return GetRandomRangeValue(warningDurationRange);
+					return GetRandomRangeValue(balanceSettings.WarningDurationRange);
 				case BombTimerPhase.Overdrive:
-					return GetRandomRangeValue(overdriveDurationRange);
+					return GetRandomRangeValue(balanceSettings.OverdriveDurationRange);
 				default:
 					return 0f;
 			}
@@ -140,13 +151,13 @@ namespace BombRunner.Scripts.Bomb
 			switch (timerPhase)
 			{
 				case BombTimerPhase.Calm:
-					return calmMoveSpeed;
+					return balanceSettings.CalmMoveSpeed;
 				case BombTimerPhase.Warning:
-					return warningMoveSpeed;
+					return balanceSettings.WarningMoveSpeed;
 				case BombTimerPhase.Overdrive:
-					return overdriveMoveSpeed;
+					return balanceSettings.OverdriveMoveSpeed;
 				default:
-					return calmMoveSpeed;
+					return balanceSettings.CalmMoveSpeed;
 			}
 		}
 
@@ -154,8 +165,9 @@ namespace BombRunner.Scripts.Bomb
 		{
 			hasExploded = true;
 			transform.localScale = baseScale;
-			ResolveClosestPlayerDown();
+			var downedPlayer = ResolveClosestPlayerDown();
 			ShowTemporaryExplosionRadius();
+			Exploded?.Invoke(this, downedPlayer);
 		}
 
 		private void ChaseTarget()
@@ -229,20 +241,19 @@ namespace BombRunner.Scripts.Bomb
 			transform.localScale = baseScale * pulse;
 		}
 
-		private void ResolveClosestPlayerDown()
+		private PlayerStateController ResolveClosestPlayerDown()
 		{
 			var closestPlayer = FindClosestAlivePlayerInExplosionRadius();
 
 			if (closestPlayer == null)
 			{
 				Debug.Log("Bomb exploded: no alive player in explosion radius");
-				return;
+				return null;
 			}
 
-			closestPlayer.SetAlive(false);
-			closestPlayer.SetTarget(false);
-			bombTargetService.TrySetAnyAliveTarget(closestPlayer);
+			closestPlayer.SetDowned();
 			Debug.Log($"Bomb exploded: {closestPlayer.PlayerLabel} downed as closest alive player");
+			return closestPlayer;
 		}
 
 		private PlayerStateController FindClosestAlivePlayerInExplosionRadius()
@@ -252,8 +263,10 @@ namespace BombRunner.Scripts.Bomb
 			var closestPlayer = default(PlayerStateController);
 			var closestDistanceSqr = float.MaxValue;
 
-			TrySelectClosestPlayer(localPlayer, center, radiusSqr, ref closestPlayer, ref closestDistanceSqr);
-			TrySelectClosestPlayer(dummyPlayer, center, radiusSqr, ref closestPlayer, ref closestDistanceSqr);
+			for (var i = 0; i < players.Length; i++)
+			{
+				TrySelectClosestPlayer(players[i], center, radiusSqr, ref closestPlayer, ref closestDistanceSqr);
+			}
 
 			return closestPlayer;
 		}

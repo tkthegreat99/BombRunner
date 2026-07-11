@@ -27,7 +27,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public bool IsDashing => isDashing;
 		public bool IsCoolingDown => isCoolingDown;
-		public bool IsDashReady => !isDashing && !isCoolingDown;
+		public bool IsDashReady => CanDash() && !isDashing && !isCoolingDown;
 		public float CooldownRemaining => isCoolingDown ? Mathf.Max(0f, cooldownEndTime - Time.time) : 0f;
 
 		[Inject]
@@ -58,7 +58,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void Update()
 		{
-			if (!hasInputService || !isInputEnabled || !inputService.DashPressed)
+			if (!hasInputService || !isInputEnabled || !inputService.DashPressed || !CanDash())
 			{
 				return;
 			}
@@ -69,7 +69,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 		// 대시는 Coroutine 대신 UniTask와 CancellationToken으로 시간 흐름을 제어한다.
 		private async UniTaskVoid TryDashAsync(CancellationToken cancellationToken)
 		{
-			if (isDashing || isCoolingDown)
+			if (isDashing || isCoolingDown || !CanDash())
 			{
 				return;
 			}
@@ -115,10 +115,21 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 				var deltaTime = Time.deltaTime;
 				elapsedTime += deltaTime;
+
+				if (!CanDash())
+				{
+					break;
+				}
+
 				characterController.Move(direction * (dashSpeed * deltaTime));
 
 				await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
 			}
+		}
+
+		private bool CanDash()
+		{
+			return stateController == null || stateController.CanDash;
 		}
 
 		// 쿨타임 동안 재사용을 막아 추격전의 리듬을 만든다.

@@ -15,6 +15,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private PlayerDashController dashController;
 		private PlayerStateController stateController;
 		private Vector3 lastMoveDirection = Vector3.forward;
+		private float downedMoveSpeedMultiplier;
 		private bool hasInputService;
 		private bool isInputEnabled = true;
 
@@ -27,10 +28,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 			hasInputService = true;
 		}
 
-		public void Initialize(float moveSpeed, float rotationSpeed)
+		public void Initialize(float moveSpeed, float rotationSpeed, float downedMoveSpeedMultiplier)
 		{
 			this.moveSpeed = moveSpeed;
 			this.rotationSpeed = rotationSpeed;
+			this.downedMoveSpeedMultiplier = downedMoveSpeedMultiplier;
 		}
 
 		public void SetInputEnabled(bool isInputEnabled)
@@ -91,7 +93,14 @@ namespace BombRunner.Scripts.Gameplay.Player
 				RotateToMoveDirection(moveDirection);
 			}
 
-			characterController.Move(moveDirection * (moveSpeed * Time.deltaTime));
+			var currentMoveSpeed = moveSpeed;
+
+			if (stateController != null && stateController.IsDowned)
+			{
+				currentMoveSpeed *= Mathf.Clamp01(downedMoveSpeedMultiplier);
+			}
+
+			characterController.Move(moveDirection * (currentMoveSpeed * Time.deltaTime));
 		}
 
 		private void RotateToMoveDirection(Vector3 moveDirection)

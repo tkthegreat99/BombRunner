@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using BombRunner.Scripts.Bomb;
+using BombRunner.Scripts.Data;
 using BombRunner.Scripts.Gameplay.Player;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -10,77 +11,70 @@ namespace BombRunner.Scripts.Gameplay.Match
 {
 	public sealed class LocalTargetTossPrototype : ITickable, IDisposable
 	{
-		private const float TossDistanceSqr = 1.44f;
-		private static readonly TimeSpan TagImmuneDuration = TimeSpan.FromSeconds(3);
-
 		private readonly BombTargetService bombTargetService;
+		private readonly GameBalanceSettings balanceSettings;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
-		private PlayerStateController localPlayer;
-		private PlayerStateController dummyPlayer;
+		private PlayerStateController[] players;
 		private bool isInitialized;
 		private bool wasTouching;
 
-		public LocalTargetTossPrototype(BombTargetService bombTargetService)
+		public LocalTargetTossPrototype(
+			BombTargetService bombTargetService,
+			GameBalanceSettings balanceSettings)
 		{
 			this.bombTargetService = bombTargetService;
+			this.balanceSettings = balanceSettings;
 		}
 
-		// 임시 로컬 태그 검증용. 이후 타겟 변경 확정은 Host/Master 권한 서비스와 RPC로 이동.
-		public void Initialize(PlayerStateController localPlayer, PlayerStateController dummyPlayer)
+		public void Initialize(PlayerStateController[] players)
 		{
-			this.localPlayer = localPlayer;
-			this.dummyPlayer = dummyPlayer;
-			isInitialized = localPlayer != null && dummyPlayer != null;
+			this.players = players;
+			isInitialized = players != null && players.Length > 0;
 			wasTouching = false;
+		}
 
+		public void Tick()
+		{
 			if (!isInitialized)
 			{
 				return;
 			}
 
-			this.localPlayer.SetPlayerLabel("Local Player");
-			this.dummyPlayer.SetPlayerLabel("Dummy Player");
-		}
+			var currentTarget = bombTargetService.TargetPlayer;
 
-		public void Tick()
-		{
-			if (!isInitialized || localPlayer == null || dummyPlayer == null)
-			{
-				return;
-			}
-
-			if (!localPlayer.IsAlive || !dummyPlayer.IsAlive)
-			{
-				return;
-			}
-
-			var offset = localPlayer.transform.position - dummyPlayer.transform.position;
-			offset.y = 0f;
-			var isTouching = offset.sqrMagnitude <= TossDistanceSqr;
-
-			if (!isTouching)
+			if (currentTarget == null || !currentTarget.IsAlive)
 			{
 				wasTouching = false;
 				return;
 			}
 
-			if (wasTouching)
+			for (var i = 0; i < players.Length; i++)
 			{
-				return;
+				var candidate = players[i];
+
+				if (candidate == null || candidate == currentTarget || !candidate.IsAlive)
+				{
+					continue;
+				}
+
+				if (!IsTouching(currentTarget, candidate))
+				{
+					continue;
+				}
+
+				if (wasTouching)
+				{
+					return;
+				}
+
+				if (TryTransferTarget(currentTarget, candidate))
+				{
+					wasTouching = true;
+					return;
+				}
 			}
 
-			wasTouching = true;
-
-			var currentTarget = bombTargetService.TargetPlayer;
-
-			if (currentTarget == localPlayer)
-			{
-				TryTransferTarget(localPlayer, dummyPlayer);
-			}
-			else if (currentTarget == dummyPlayer)
-			{
-				TryTransferTarget(dummyPlayer, localPlayer);
-			}
+			wasTouching = false;
 		}
 
 		public void Dispose()
@@ -89,20 +83,28 @@ namespace BombRunner.Scripts.Gameplay.Match
 			cancellationTokenSource.Dispose();
 		}
 
-		private void TryTransferTarget(PlayerStateController fromPlayer, PlayerStateController toPlayer)
+		private bool IsTouching(PlayerStateController fromPlayer, PlayerStateController toPlayer)
+		{
+			var offset = fromPlayer.transform.position - toPlayer.transform.position;
+			offset.y = 0f;
+			return offset.sqrMagnitude <= balanceSettings.TagDistanceSqr;
+		}
+
+		private bool TryTransferTarget(PlayerStateController fromPlayer, PlayerStateController toPlayer)
 		{
 			if (fromPlayer == null || toPlayer == null || toPlayer.IsTagImmune)
 			{
-				return;
+				return false;
 			}
 
 			if (!bombTargetService.TrySetTarget(toPlayer))
 			{
-				return;
+				return false;
 			}
 
 			RunTagImmuneWindowAsync(fromPlayer, cancellationTokenSource.Token).Forget();
-			Debug.Log($"Target toss: {fromPlayer.PlayerLabel} -> {toPlayer.PlayerLabel}, {fromPlayer.PlayerLabel} 3초 태그 면역");
+			Debug.Log($"Target toss: {fromPlayer.PlayerLabel} -> {toPlayer.PlayerLabel}, tag immune {balanceSettings.TagImmuneDurationSeconds:0.00}s");
+			return true;
 		}
 
 		private async UniTaskVoid RunTagImmuneWindowAsync(PlayerStateController player, CancellationToken cancellationToken)
@@ -111,7 +113,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 			try
 			{
-				await UniTask.Delay(TagImmuneDuration, cancellationToken: cancellationToken);
+				var delay = TimeSpan.FromSeconds(balanceSettings.TagImmuneDurationSeconds);
+				await UniTask.Delay(delay, cancellationToken: cancellationToken);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{
