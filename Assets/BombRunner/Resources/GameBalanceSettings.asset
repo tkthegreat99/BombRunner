@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e7f2c8bc3be41d1bd15a488f8df2f3b, type: 3}
+  m_Name: GameBalanceSettings
+  m_EditorClassIdentifier: 
+  tagDistance: 1.5
+  tagImmuneDurationSeconds: 3
+  calmDurationRange: {x: 4, y: 6}
+  warningDurationRange: {x: 3, y: 5}
+  overdriveDurationRange: {x: 2, y: 4}
+  calmMoveSpeed: 5.2
+  warningMoveSpeed: 6.8
+  overdriveMoveSpeed: 8.4
+  explosionRadius: 2.5
+  downedMoveSpeedMultiplier: 0.35
+  aliveSeparationRadius: 0.55
+  downedSeparationRadius: 0.35
+  separationStrength: 14
+  downedSeparationPushWeight: 0.45
+  spawnCueDurationSeconds: 1.6
+  spawnCueRadius: 1.2
+  spawnCueHeight: 0.03
+  bombSpawnCameraFocusSeconds: 0.75
+  bombDropHeight: 6
+  bombDropDurationSeconds: 0.65
+  bombStartCountdownSeconds: 3
