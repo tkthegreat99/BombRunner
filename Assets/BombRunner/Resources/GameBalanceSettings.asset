@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e7f2c8bc3be41d1bd15a488f8df2f3b, type: 3}
   m_Name: GameBalanceSettings
   m_EditorClassIdentifier: 
-  tagDistance: 1.5
+  tagDistance: 1.65
   tagImmuneDurationSeconds: 3
   calmDurationRange: {x: 4, y: 6}
   warningDurationRange: {x: 3, y: 5}
@@ -21,11 +21,11 @@ MonoBehaviour:
   warningMoveSpeed: 6.8
   overdriveMoveSpeed: 8.4
   explosionRadius: 2.5
-  downedMoveSpeedMultiplier: 0.35
+  downedMoveSpeedMultiplier: 0.28
   aliveSeparationRadius: 0.55
-  downedSeparationRadius: 0.35
-  separationStrength: 14
-  downedSeparationPushWeight: 0.45
+  downedSeparationRadius: 0.68
+  separationStrength: 18
+  downedSeparationPushWeight: 2.6
   spawnCueDurationSeconds: 1.6
   spawnCueRadius: 1.2
   spawnCueHeight: 0.03
@@ -33,3 +33,6 @@ MonoBehaviour:
   bombDropHeight: 6
   bombDropDurationSeconds: 0.65
   bombStartCountdownSeconds: 3
+  tauntRadius: 2.2
+  tauntBombRiskHoldSeconds: 1.25
+  tauntBombRiskDistance: 5
