@@ -14,6 +14,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly LocalTargetTossPrototype localTargetTossPrototype;
 		private readonly LocalMatchFlowService localMatchFlowService;
 		private readonly LocalPlayerSeparationService localPlayerSeparationService;
+		private readonly LocalDownedObstacleService localDownedObstacleService;
 		private readonly LocalTauntPrototype localTauntPrototype;
 
 		public StageManager(
@@ -24,6 +25,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			LocalTargetTossPrototype localTargetTossPrototype,
 			LocalMatchFlowService localMatchFlowService,
 			LocalPlayerSeparationService localPlayerSeparationService,
+			LocalDownedObstacleService localDownedObstacleService,
 			LocalTauntPrototype localTauntPrototype)
 		{
 			this.playerSpawnService = playerSpawnService;
@@ -33,6 +35,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.localTargetTossPrototype = localTargetTossPrototype;
 			this.localMatchFlowService = localMatchFlowService;
 			this.localPlayerSeparationService = localPlayerSeparationService;
+			this.localDownedObstacleService = localDownedObstacleService;
 			this.localTauntPrototype = localTauntPrototype;
 		}
 
@@ -73,6 +76,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			localTargetTossPrototype.Initialize(players);
 			localMatchFlowService.Initialize(players);
 			localPlayerSeparationService.Initialize(players);
+			localDownedObstacleService.Initialize(players);
 			localTauntPrototype.Initialize(players);
 		}
 	}

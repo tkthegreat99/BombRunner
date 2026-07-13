@@ -16,6 +16,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private PlayerStateController stateController;
 		private Vector3 lastMoveDirection = Vector3.forward;
 		private float downedMoveSpeedMultiplier;
+		private float temporarySlowEndTime;
+		private float temporarySlowSpeedMultiplier = 1f;
 		private bool hasInputService;
 		private bool isInputEnabled = true;
 
@@ -43,6 +45,17 @@ namespace BombRunner.Scripts.Gameplay.Player
 			{
 				stateController.SetMoving(false);
 			}
+		}
+
+		public void ApplyTemporarySlow(float durationSeconds, float speedMultiplier)
+		{
+			if (Time.time >= temporarySlowEndTime)
+			{
+				temporarySlowSpeedMultiplier = 1f;
+			}
+
+			temporarySlowEndTime = Mathf.Max(temporarySlowEndTime, Time.time + Mathf.Max(0f, durationSeconds));
+			temporarySlowSpeedMultiplier = Mathf.Min(temporarySlowSpeedMultiplier, Mathf.Clamp01(speedMultiplier));
 		}
 
 		private void Awake()
@@ -104,6 +117,15 @@ namespace BombRunner.Scripts.Gameplay.Player
 			if (stateController != null && stateController.IsDowned)
 			{
 				currentMoveSpeed *= Mathf.Clamp01(downedMoveSpeedMultiplier);
+			}
+
+			if (Time.time < temporarySlowEndTime)
+			{
+				currentMoveSpeed *= temporarySlowSpeedMultiplier;
+			}
+			else
+			{
+				temporarySlowSpeedMultiplier = 1f;
 			}
 
 			characterController.Move(moveDirection * (currentMoveSpeed * Time.deltaTime));

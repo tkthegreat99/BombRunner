@@ -116,6 +116,7 @@ namespace BombRunner.Scripts.App
 			builder.Register<BombSpawnService>(Lifetime.Scoped);
 			builder.Register<LocalMatchFlowService>(Lifetime.Scoped);
 			builder.Register<LocalPlayerSeparationService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
+			builder.Register<LocalDownedObstacleService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalTargetTossPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalTauntPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.RegisterEntryPoint<StageManager>(Lifetime.Scoped);

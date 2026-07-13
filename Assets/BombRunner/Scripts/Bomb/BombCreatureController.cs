@@ -22,6 +22,9 @@ namespace BombRunner.Scripts.Bomb
 		private Vector3 velocity;
 		private Vector3 baseScale;
 		private float phaseRemainingTime;
+		private float temporarySpeedMultiplier = 1f;
+		private float temporarySpeedBoostEndTime;
+		private float nextDownedBoostTime;
 		private bool isInitialized;
 		private bool isActivated;
 		private bool hasExploded;
@@ -42,6 +45,9 @@ namespace BombRunner.Scripts.Bomb
 			velocity = Vector3.zero;
 			baseScale = transform.localScale;
 			phaseRemainingTime = 0f;
+			temporarySpeedMultiplier = 1f;
+			temporarySpeedBoostEndTime = 0f;
+			nextDownedBoostTime = 0f;
 			isActivated = false;
 			hasExploded = false;
 			isInitialized = bombState != null
@@ -72,6 +78,7 @@ namespace BombRunner.Scripts.Bomb
 				return;
 			}
 
+			TryTriggerDownedPlayerBoost();
 			ChaseTarget();
 			UpdateTemporaryWarningPulse();
 		}
@@ -203,7 +210,7 @@ namespace BombRunner.Scripts.Bomb
 			}
 
 			var speedScale = Mathf.Clamp01(distance / SlowRadius);
-			return offset / distance * (bombState.MoveSpeed * speedScale);
+			return offset / distance * (bombState.MoveSpeed * temporarySpeedMultiplier * speedScale);
 		}
 
 		private void ApplyDesiredVelocity(Vector3 desiredVelocity)
@@ -239,6 +246,46 @@ namespace BombRunner.Scripts.Bomb
 
 			var pulse = 1f + Mathf.Sin(Time.time * WarningPulseSpeed) * WarningPulseScale;
 			transform.localScale = baseScale * pulse;
+		}
+
+		private void TryTriggerDownedPlayerBoost()
+		{
+			if (Time.time < temporarySpeedBoostEndTime)
+			{
+				return;
+			}
+
+			temporarySpeedMultiplier = 1f;
+
+			if (Time.time < nextDownedBoostTime)
+			{
+				return;
+			}
+
+			for (var i = 0; i < players.Length; i++)
+			{
+				var player = players[i];
+
+				if (player == null || !player.IsDowned)
+				{
+					continue;
+				}
+
+				var offset = player.transform.position - transform.position;
+				offset.y = 0f;
+
+				if (offset.sqrMagnitude > balanceSettings.BombDownedBoostRadiusSqr)
+				{
+					continue;
+				}
+
+				// Host/Master 확정 대상인 폭탄 임시 가속 판정.
+				temporarySpeedMultiplier = balanceSettings.BombDownedBoostSpeedMultiplier;
+				temporarySpeedBoostEndTime = Time.time + balanceSettings.BombDownedBoostDurationSeconds;
+				nextDownedBoostTime = Time.time + balanceSettings.BombDownedBoostCooldownSeconds;
+				Debug.Log($"Bomb boost: stepped on downed player {player.PlayerLabel}");
+				return;
+			}
 		}
 
 		private PlayerStateController ResolveClosestPlayerDown()
