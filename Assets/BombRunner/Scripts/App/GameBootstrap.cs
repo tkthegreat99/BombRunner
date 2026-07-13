@@ -12,8 +12,7 @@ namespace BombRunner.Scripts.App
 		private DataManager dataManager;
 		private SoundManager soundManager;
 		private UiManager uiManager;
-		private SceneLoader sceneLoader;
-		private GameSettings gameSettings;
+		private SceneFlowService sceneFlowService;
 		private bool isInitialized;
 		private bool hasDependencies;
 
@@ -23,15 +22,13 @@ namespace BombRunner.Scripts.App
 			DataManager dataManager,
 			SoundManager soundManager,
 			UiManager uiManager,
-			SceneLoader sceneLoader,
-			GameSettings gameSettings)
+			SceneFlowService sceneFlowService)
 		{
 			this.saveService = saveService;
 			this.dataManager = dataManager;
 			this.soundManager = soundManager;
 			this.uiManager = uiManager;
-			this.sceneLoader = sceneLoader;
-			this.gameSettings = gameSettings;
+			this.sceneFlowService = sceneFlowService;
 			hasDependencies = true;
 		}
 
@@ -59,7 +56,7 @@ namespace BombRunner.Scripts.App
 			try
 			{
 				await InitializeServicesAsync(cancellationToken);
-				await sceneLoader.LoadSceneAsync(gameSettings.MainMenuSceneName, cancellationToken);
+				await sceneFlowService.LoadMainMenuAsync(cancellationToken);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
 			{

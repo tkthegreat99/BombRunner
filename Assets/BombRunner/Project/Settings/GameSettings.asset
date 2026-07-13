@@ -15,3 +15,9 @@ MonoBehaviour:
   initSceneName: Init
   mainMenuSceneName: MainMenu
   gameSceneName: Game
+  quickMatchWaitingSceneName: ''
+  quickMatchMaxParticipants: 8
+  quickMatchCountdownSeconds: 3
+  quickMatchLocalJoinHoldSeconds: 0.45
+  quickMatchDummyJoinIntervalSeconds: 0.35
+  quickMatchStartHoldSeconds: 0.35

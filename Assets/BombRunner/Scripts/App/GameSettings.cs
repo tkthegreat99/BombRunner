@@ -14,8 +14,28 @@ namespace BombRunner.Scripts.App
 		// 실제 게임 플레이 씬 이름
 		[SerializeField] private string gameSceneName = "Game";
 
+		// 대기장 전용 씬을 만들기 전까지 비워두면 Game 씬의 임시 대기장 모드 사용
+		[SerializeField] private string quickMatchWaitingSceneName = "";
+
+		// 로컬 빠른 대전 대기장 프로토타입 설정
+		[SerializeField] private int quickMatchMaxParticipants = 8;
+		[SerializeField] private int quickMatchCountdownSeconds = 3;
+		[SerializeField] private float quickMatchLocalJoinHoldSeconds = 0.45f;
+		[SerializeField] private float quickMatchDummyJoinIntervalSeconds = 0.35f;
+		[SerializeField] private float quickMatchStartHoldSeconds = 0.35f;
+
 		public string InitSceneName => initSceneName;
 		public string MainMenuSceneName => mainMenuSceneName;
 		public string GameSceneName => gameSceneName;
+		public string QuickMatchWaitingSceneName =>
+			string.IsNullOrWhiteSpace(quickMatchWaitingSceneName)
+				? gameSceneName
+				: quickMatchWaitingSceneName;
+		public bool UsesTemporaryQuickMatchWaitingMode => string.IsNullOrWhiteSpace(quickMatchWaitingSceneName);
+		public int QuickMatchMaxParticipants => Mathf.Max(1, quickMatchMaxParticipants);
+		public int QuickMatchCountdownSeconds => Mathf.Max(0, quickMatchCountdownSeconds);
+		public float QuickMatchLocalJoinHoldSeconds => Mathf.Max(0f, quickMatchLocalJoinHoldSeconds);
+		public float QuickMatchDummyJoinIntervalSeconds => Mathf.Max(0f, quickMatchDummyJoinIntervalSeconds);
+		public float QuickMatchStartHoldSeconds => Mathf.Max(0f, quickMatchStartHoldSeconds);
 	}
 }

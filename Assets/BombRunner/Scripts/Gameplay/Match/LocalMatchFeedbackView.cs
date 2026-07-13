@@ -42,7 +42,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 				this.GetCancellationTokenOnDestroy()).Forget();
 		}
 
-		public void ShowTagImmuneRejected(Transform anchor)
+		public void ShowTagImmuneRejected(Transform anchor, Transform cameraTransform)
 		{
 			if (anchor == null)
 			{
@@ -56,12 +56,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 				0.32f);
 			var textMesh = textObject.GetComponent<TextMesh>();
 			textMesh.text = "태그 면역 상태입니다!";
-			var mainCamera = Camera.main;
-
-			if (mainCamera != null)
-			{
-				FaceCamera(textObject.transform, mainCamera.transform);
-			}
+			FaceCamera(textObject.transform, cameraTransform);
 
 			Destroy(textObject, 0.9f);
 		}

@@ -14,15 +14,38 @@ namespace BombRunner.Scripts.App
 	public sealed class GameLifetimeScope : LifetimeScope
 	{
 		[SerializeField] private PlayerInputReader playerInputReader;
+		[SerializeField] private GameSettings gameSettings;
 		[SerializeField] private PlayerSpawnSettings playerSpawnSettings;
 		[SerializeField] private BombSpawnSettings bombSpawnSettings;
 		[SerializeField] private GameBalanceSettings gameBalanceSettings;
 		[SerializeField] private LocalPlayerCameraFollow cameraFollow;
 		[SerializeField] private DashCooldownLogView dashCooldownLogView;
 		[SerializeField] private LocalMatchFeedbackView matchFeedbackView;
+		[SerializeField] private LocalQuickMatchWaitingView quickMatchWaitingView;
+
+		protected override LifetimeScope FindParent()
+		{
+			return LifetimeScope.Find<ProjectLifetimeScope>();
+		}
 
 		protected override void Configure(IContainerBuilder builder)
 		{
+			if (LifetimeScope.Find<ProjectLifetimeScope>() == null)
+			{
+				var activeGameSettings = gameSettings;
+
+				if (activeGameSettings == null)
+				{
+					activeGameSettings = ScriptableObject.CreateInstance<GameSettings>();
+					activeGameSettings.name = "RuntimeGameSettings";
+					Debug.LogWarning("GameLifetimeScope에 ProjectLifetimeScope 없음. 직접 Game 씬 실행용 기본 SceneFlowService 등록");
+				}
+
+				builder.RegisterInstance(activeGameSettings);
+				builder.Register<SceneLoader>(Lifetime.Scoped);
+				builder.Register<SceneFlowService>(Lifetime.Scoped);
+			}
+
 			var activeInputReader = playerInputReader;
 
 			if (activeInputReader == null)
@@ -96,6 +119,17 @@ namespace BombRunner.Scripts.App
 				matchFeedbackView = feedbackViewObject.AddComponent<LocalMatchFeedbackView>();
 			}
 
+			if (quickMatchWaitingView == null)
+			{
+				quickMatchWaitingView = FindFirstObjectByType<LocalQuickMatchWaitingView>();
+			}
+
+			if (quickMatchWaitingView == null)
+			{
+				var waitingViewObject = new GameObject("Local Quick Match Waiting View");
+				quickMatchWaitingView = waitingViewObject.AddComponent<LocalQuickMatchWaitingView>();
+			}
+
 			if (cameraFollow == null || dashCooldownLogView == null)
 			{
 				Debug.LogError("Game Scene test components are missing. Check CameraFollow and DashCooldownLogView.");
@@ -106,6 +140,7 @@ namespace BombRunner.Scripts.App
 			builder.RegisterComponent(cameraFollow);
 			builder.RegisterComponent(dashCooldownLogView);
 			builder.RegisterComponent(matchFeedbackView);
+			builder.RegisterComponent(quickMatchWaitingView);
 			builder.RegisterInstance(activeSpawnSettings);
 			builder.RegisterInstance(activeBombSpawnSettings);
 			builder.RegisterInstance(activeBalanceSettings);
@@ -114,6 +149,7 @@ namespace BombRunner.Scripts.App
 			builder.Register<BombState>(Lifetime.Scoped);
 			builder.Register<BombTargetService>(Lifetime.Scoped);
 			builder.Register<BombSpawnService>(Lifetime.Scoped);
+			builder.Register<LocalQuickMatchWaitingService>(Lifetime.Scoped);
 			builder.Register<LocalMatchFlowService>(Lifetime.Scoped);
 			builder.Register<LocalPlayerSeparationService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalDownedObstacleService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();

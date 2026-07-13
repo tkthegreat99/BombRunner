@@ -31,6 +31,7 @@ namespace BombRunner.Scripts.App
 
 			// Init 씬에서 게임 실행 내내 유지될 전역 서비스를 등록
 			builder.Register<SceneLoader>(Lifetime.Singleton);
+			builder.Register<SceneFlowService>(Lifetime.Singleton);
 			builder.Register<SaveService>(Lifetime.Singleton);
 			builder.Register<DataManager>(Lifetime.Singleton);
 			builder.Register<SoundManager>(Lifetime.Singleton);

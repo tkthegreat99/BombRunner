@@ -1,38 +1,50 @@
+using System;
+using System.Threading;
+using BombRunner.Scripts.App;
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Gameplay.Player;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
-	public sealed class StageManager : IStartable
+	public sealed class StageManager : IStartable, IDisposable
 	{
+		private readonly SceneFlowService sceneFlowService;
 		private readonly PlayerSpawnService playerSpawnService;
 		private readonly LocalPlayerCameraFollow cameraFollow;
 		private readonly DashCooldownLogView dashCooldownLogView;
 		private readonly BombTargetService bombTargetService;
 		private readonly LocalTargetTossPrototype localTargetTossPrototype;
+		private readonly LocalQuickMatchWaitingService localQuickMatchWaitingService;
 		private readonly LocalMatchFlowService localMatchFlowService;
 		private readonly LocalPlayerSeparationService localPlayerSeparationService;
 		private readonly LocalDownedObstacleService localDownedObstacleService;
 		private readonly LocalTauntPrototype localTauntPrototype;
+		private readonly CancellationTokenSource cancellationTokenSource = new();
 
 		public StageManager(
+			SceneFlowService sceneFlowService,
 			PlayerSpawnService playerSpawnService,
 			LocalPlayerCameraFollow cameraFollow,
 			DashCooldownLogView dashCooldownLogView,
 			BombTargetService bombTargetService,
 			LocalTargetTossPrototype localTargetTossPrototype,
+			LocalQuickMatchWaitingService localQuickMatchWaitingService,
 			LocalMatchFlowService localMatchFlowService,
 			LocalPlayerSeparationService localPlayerSeparationService,
 			LocalDownedObstacleService localDownedObstacleService,
 			LocalTauntPrototype localTauntPrototype)
 		{
+			this.sceneFlowService = sceneFlowService;
 			this.playerSpawnService = playerSpawnService;
 			this.cameraFollow = cameraFollow;
 			this.dashCooldownLogView = dashCooldownLogView;
 			this.bombTargetService = bombTargetService;
 			this.localTargetTossPrototype = localTargetTossPrototype;
+			this.localQuickMatchWaitingService = localQuickMatchWaitingService;
 			this.localMatchFlowService = localMatchFlowService;
 			this.localPlayerSeparationService = localPlayerSeparationService;
 			this.localDownedObstacleService = localDownedObstacleService;
@@ -41,6 +53,17 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		// 임시 로컬 검증용 진입점. 실제 멀티플레이가 들어오면 네트워크 스폰과 Host 권한 흐름으로 교체.
 		public void Start()
+		{
+			RunStageAsync(cancellationTokenSource.Token).Forget();
+		}
+
+		public void Dispose()
+		{
+			cancellationTokenSource.Cancel();
+			cancellationTokenSource.Dispose();
+		}
+
+		private async UniTaskVoid RunStageAsync(CancellationToken cancellationToken)
 		{
 			var player = playerSpawnService.SpawnLocalPlayer();
 			var dummyPlayers = playerSpawnService.SpawnDummyPlayers();
@@ -71,6 +94,17 @@ namespace BombRunner.Scripts.Gameplay.Match
 				dummyStateA,
 				dummyStateB
 			};
+
+			if (sceneFlowService.RequestedMatchMode == MatchMode.LocalQuickMatchWaiting)
+			{
+				Debug.Log("StageManager: local quick match waiting flow started.");
+				await localQuickMatchWaitingService.WaitForMatchStartAsync(players, cancellationToken);
+			}
+
+			if (cancellationToken.IsCancellationRequested)
+			{
+				return;
+			}
 
 			bombTargetService.Initialize(players);
 			localTargetTossPrototype.Initialize(players);

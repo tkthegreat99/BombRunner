@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using BombRunner.Scripts.Bomb;
+using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Data;
 using BombRunner.Scripts.Gameplay.Player;
 using Cysharp.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly BombTargetService bombTargetService;
 		private readonly GameBalanceSettings balanceSettings;
 		private readonly LocalMatchFeedbackView matchFeedbackView;
+		private readonly LocalPlayerCameraFollow cameraFollow;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
 		private PlayerStateController[] players;
 		private bool isInitialized;
@@ -22,11 +24,13 @@ namespace BombRunner.Scripts.Gameplay.Match
 		public LocalTargetTossPrototype(
 			BombTargetService bombTargetService,
 			GameBalanceSettings balanceSettings,
-			LocalMatchFeedbackView matchFeedbackView)
+			LocalMatchFeedbackView matchFeedbackView,
+			LocalPlayerCameraFollow cameraFollow)
 		{
 			this.bombTargetService = bombTargetService;
 			this.balanceSettings = balanceSettings;
 			this.matchFeedbackView = matchFeedbackView;
+			this.cameraFollow = cameraFollow;
 		}
 
 		public void Initialize(PlayerStateController[] players)
@@ -102,7 +106,9 @@ namespace BombRunner.Scripts.Gameplay.Match
 			{
 				if (matchFeedbackView != null)
 				{
-					matchFeedbackView.ShowTagImmuneRejected(toPlayer.transform);
+					matchFeedbackView.ShowTagImmuneRejected(
+						toPlayer.transform,
+						cameraFollow != null ? cameraFollow.transform : null);
 				}
 
 				return false;
