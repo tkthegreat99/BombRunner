@@ -4,6 +4,7 @@ using BombRunner.Scripts.Data;
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
+using BombRunner.Scripts.Localization;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -44,6 +45,7 @@ namespace BombRunner.Scripts.App
 				builder.RegisterInstance(activeGameSettings);
 				builder.Register<SceneLoader>(Lifetime.Scoped);
 				builder.Register<SceneFlowService>(Lifetime.Scoped);
+				builder.Register<LocalizationService>(Lifetime.Scoped);
 			}
 
 			var activeInputReader = playerInputReader;

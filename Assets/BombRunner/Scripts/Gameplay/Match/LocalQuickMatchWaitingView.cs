@@ -1,13 +1,26 @@
+using BombRunner.Scripts.Localization;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
 	public sealed class LocalQuickMatchWaitingView : MonoBehaviour
 	{
+		private const string WaitingCountKey = "quick_match.waiting_count";
+		private const string CountdownKey = "quick_match.countdown";
+		private const string StartingKey = "quick_match.starting";
+
 		[SerializeField] private Text statusText;
 
+		private LocalizationService localizationService;
 		private bool didWarnMissingStatusText;
+
+		[Inject]
+		public void Construct(LocalizationService localizationService)
+		{
+			this.localizationService = localizationService;
+		}
 
 		private void Awake()
 		{
@@ -17,19 +30,19 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		public void ShowWaiting(int currentParticipants, int maxParticipants)
 		{
-			SetText($"입장 중 {currentParticipants} / {maxParticipants}");
+			SetLocalizedText(WaitingCountKey, currentParticipants, maxParticipants);
 			Debug.Log($"Quick match waiting: participants {currentParticipants}/{maxParticipants}");
 		}
 
 		public void ShowCountdown(int seconds)
 		{
-			SetText($"매치 시작 {seconds}");
+			SetLocalizedText(CountdownKey, seconds);
 			Debug.Log($"Quick match waiting: countdown {seconds}");
 		}
 
 		public void ShowStarting()
 		{
-			SetText("매치 시작");
+			SetLocalizedText(StartingKey);
 			Debug.Log("Quick match waiting: local match start");
 		}
 
@@ -40,6 +53,16 @@ namespace BombRunner.Scripts.Gameplay.Match
 				statusText.text = "";
 				statusText.gameObject.SetActive(false);
 			}
+		}
+
+		private void SetLocalizedText(string key, params object[] args)
+		{
+			SetText(Localize(key, args));
+		}
+
+		private string Localize(string key, params object[] args)
+		{
+			return localizationService != null ? localizationService.Get(key, args) : key;
 		}
 
 		private void SetText(string message)

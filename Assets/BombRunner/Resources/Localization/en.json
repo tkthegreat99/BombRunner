@@ -1,0 +1,28 @@
+{
+  "entries": [
+    {
+      "key": "quick_match.waiting_count",
+      "value": "Joining {0} / {1}"
+    },
+    {
+      "key": "quick_match.countdown",
+      "value": "Match starts in {0}"
+    },
+    {
+      "key": "quick_match.starting",
+      "value": "Match starting"
+    },
+    {
+      "key": "match.feedback.bomb_spawn",
+      "value": "Bomb incoming!"
+    },
+    {
+      "key": "match.feedback.winner",
+      "value": "Winner\n{0}"
+    },
+    {
+      "key": "match.feedback.tag_immune",
+      "value": "Immune"
+    }
+  ]
+}
