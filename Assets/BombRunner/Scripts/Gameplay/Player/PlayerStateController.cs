@@ -22,6 +22,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 		[SerializeField] private bool isTarget;
 		[SerializeField] private bool isTaunting;
 		[SerializeField] private bool isDashLocked;
+		private float tagImmuneDurationSeconds;
+		private float tagImmuneEndTime;
 
 		public event Action Changed;
 
@@ -36,6 +38,23 @@ namespace BombRunner.Scripts.Gameplay.Player
 		public bool IsTaunting => isTaunting;
 		public bool IsDashLocked => isDashLocked;
 		public bool CanDash => IsAlive && !isTaunting && !isDashLocked;
+		public float TagImmuneNormalizedRemaining
+		{
+			get
+			{
+				if (!isTagImmune)
+				{
+					return 0f;
+				}
+
+				if (tagImmuneDurationSeconds <= 0f)
+				{
+					return 1f;
+				}
+
+				return Mathf.Clamp01((tagImmuneEndTime - Time.time) / tagImmuneDurationSeconds);
+			}
+		}
 
 		public void SetPlayerLabel(string playerLabel)
 		{
@@ -74,6 +93,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 				isMoving = false;
 				isDashing = false;
 				isTagImmune = false;
+				tagImmuneDurationSeconds = 0f;
+				tagImmuneEndTime = 0f;
 				isTarget = false;
 				isTaunting = false;
 				isDashLocked = false;
@@ -99,12 +120,35 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public void SetTagImmune(bool value)
 		{
+			SetTagImmune(value, 0f);
+		}
+
+		public void SetTagImmune(bool value, float durationSeconds)
+		{
 			if (IsDowned && value)
 			{
 				return;
 			}
 
-			SetState(ref isTagImmune, value);
+			var changed = isTagImmune != value;
+			isTagImmune = value;
+
+			if (value)
+			{
+				changed |= !Mathf.Approximately(tagImmuneDurationSeconds, durationSeconds);
+				tagImmuneDurationSeconds = Mathf.Max(0f, durationSeconds);
+				tagImmuneEndTime = Time.time + tagImmuneDurationSeconds;
+			}
+			else
+			{
+				tagImmuneDurationSeconds = 0f;
+				tagImmuneEndTime = 0f;
+			}
+
+			if (changed)
+			{
+				NotifyChanged();
+			}
 		}
 
 		public void SetTarget(bool value)

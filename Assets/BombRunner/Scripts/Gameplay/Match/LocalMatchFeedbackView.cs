@@ -42,6 +42,30 @@ namespace BombRunner.Scripts.Gameplay.Match
 				this.GetCancellationTokenOnDestroy()).Forget();
 		}
 
+		public void ShowTagImmuneRejected(Transform anchor)
+		{
+			if (anchor == null)
+			{
+				return;
+			}
+
+			var textObject = CreateWorldText(
+				"Temporary Tag Immune Notice",
+				anchor.position + Vector3.up * 2.6f,
+				new Color(1f, 0.88f, 0.18f, 1f),
+				0.32f);
+			var textMesh = textObject.GetComponent<TextMesh>();
+			textMesh.text = "태그 면역 상태입니다!";
+			var mainCamera = Camera.main;
+
+			if (mainCamera != null)
+			{
+				FaceCamera(textObject.transform, mainCamera.transform);
+			}
+
+			Destroy(textObject, 0.9f);
+		}
+
 		public async UniTask ShowBombStartCountdownAsync(
 			Vector3 spawnPosition,
 			int countdown,

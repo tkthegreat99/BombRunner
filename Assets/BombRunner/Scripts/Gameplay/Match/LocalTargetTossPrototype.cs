@@ -13,6 +13,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 	{
 		private readonly BombTargetService bombTargetService;
 		private readonly GameBalanceSettings balanceSettings;
+		private readonly LocalMatchFeedbackView matchFeedbackView;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
 		private PlayerStateController[] players;
 		private bool isInitialized;
@@ -20,10 +21,12 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		public LocalTargetTossPrototype(
 			BombTargetService bombTargetService,
-			GameBalanceSettings balanceSettings)
+			GameBalanceSettings balanceSettings,
+			LocalMatchFeedbackView matchFeedbackView)
 		{
 			this.bombTargetService = bombTargetService;
 			this.balanceSettings = balanceSettings;
+			this.matchFeedbackView = matchFeedbackView;
 		}
 
 		public void Initialize(PlayerStateController[] players)
@@ -67,11 +70,9 @@ namespace BombRunner.Scripts.Gameplay.Match
 					return;
 				}
 
-				if (TryTransferTarget(currentTarget, candidate))
-				{
-					wasTouching = true;
-					return;
-				}
+				TryTransferTarget(currentTarget, candidate);
+				wasTouching = true;
+				return;
 			}
 
 			wasTouching = false;
@@ -92,8 +93,18 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private bool TryTransferTarget(PlayerStateController fromPlayer, PlayerStateController toPlayer)
 		{
-			if (fromPlayer == null || toPlayer == null || toPlayer.IsTagImmune)
+			if (fromPlayer == null || toPlayer == null)
 			{
+				return false;
+			}
+
+			if (toPlayer.IsTagImmune)
+			{
+				if (matchFeedbackView != null)
+				{
+					matchFeedbackView.ShowTagImmuneRejected(toPlayer.transform);
+				}
+
 				return false;
 			}
 
@@ -109,7 +120,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private async UniTaskVoid RunTagImmuneWindowAsync(PlayerStateController player, CancellationToken cancellationToken)
 		{
-			player.SetTagImmune(true);
+			player.SetTagImmune(true, balanceSettings.TagImmuneDurationSeconds);
 
 			try
 			{

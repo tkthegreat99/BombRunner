@@ -9,12 +9,23 @@ namespace BombRunner.Scripts.Gameplay.Player
 		[SerializeField] private GameObject targetIndicatorRoot;
 		[FormerlySerializedAs("invulnerableIndicatorRoot")]
 		[SerializeField] private GameObject tagImmuneIndicatorRoot;
+		[SerializeField] private Transform tagImmuneGaugeFill;
 
 		private PlayerStateController stateController;
+		private Transform activeTagImmuneGauge;
+		private Vector3 tagImmuneGaugeFullScale = Vector3.one;
 
 		private void Awake()
 		{
 			stateController = GetComponent<PlayerStateController>();
+			activeTagImmuneGauge = tagImmuneGaugeFill != null
+				? tagImmuneGaugeFill
+				: tagImmuneIndicatorRoot != null ? tagImmuneIndicatorRoot.transform : null;
+
+			if (activeTagImmuneGauge != null)
+			{
+				tagImmuneGaugeFullScale = activeTagImmuneGauge.localScale;
+			}
 		}
 
 		private void OnEnable()
@@ -26,6 +37,14 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private void OnDisable()
 		{
 			stateController.Changed -= ApplyState;
+		}
+
+		private void Update()
+		{
+			if (stateController.IsAlive && stateController.IsTagImmune)
+			{
+				ApplyTagImmuneGauge();
+			}
 		}
 
 		private void ApplyState()
@@ -41,6 +60,21 @@ namespace BombRunner.Scripts.Gameplay.Player
 			{
 				tagImmuneIndicatorRoot.SetActive(isAlive && stateController.IsTagImmune);
 			}
+
+			ApplyTagImmuneGauge();
+		}
+
+		private void ApplyTagImmuneGauge()
+		{
+			if (activeTagImmuneGauge == null)
+			{
+				return;
+			}
+
+			var remaining = stateController.IsAlive && stateController.IsTagImmune
+				? stateController.TagImmuneNormalizedRemaining
+				: 1f;
+			activeTagImmuneGauge.localScale = tagImmuneGaugeFullScale * Mathf.Clamp01(remaining);
 		}
 	}
 }
