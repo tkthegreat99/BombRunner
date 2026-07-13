@@ -12,6 +12,13 @@
 - Prefer serialized references, prefabs, ScriptableObjects, and scene-placed Views.
 - Do not dynamically assemble HUD, popup, result, or loading UI in code.
 - Prototype primitives are allowed for gameplay validation when collider and logic structure are kept replaceable.
+- Do not add new final player-facing UI strings as hard-coded literals. Use localization keys, with prototype literals clearly treated as temporary.
+
+## Localization
+- Korean and English are the baseline languages for Steam release.
+- UI Views should request localized text through a service/table instead of owning final display copy.
+- Dynamic values such as player counts, countdowns, and player names should use formatted localization arguments.
+- Missing translations should fall back safely to the default language or visible key.
 
 ## Gameplay Data
 - Do not scatter balance constants through gameplay code.

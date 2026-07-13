@@ -113,26 +113,14 @@ namespace BombRunner.Scripts.App
 				matchFeedbackView = FindFirstObjectByType<LocalMatchFeedbackView>();
 			}
 
-			if (matchFeedbackView == null)
-			{
-				var feedbackViewObject = new GameObject("Local Match Feedback View");
-				matchFeedbackView = feedbackViewObject.AddComponent<LocalMatchFeedbackView>();
-			}
-
 			if (quickMatchWaitingView == null)
 			{
 				quickMatchWaitingView = FindFirstObjectByType<LocalQuickMatchWaitingView>();
 			}
 
-			if (quickMatchWaitingView == null)
+			if (cameraFollow == null || dashCooldownLogView == null || matchFeedbackView == null || quickMatchWaitingView == null)
 			{
-				var waitingViewObject = new GameObject("Local Quick Match Waiting View");
-				quickMatchWaitingView = waitingViewObject.AddComponent<LocalQuickMatchWaitingView>();
-			}
-
-			if (cameraFollow == null || dashCooldownLogView == null)
-			{
-				Debug.LogError("Game Scene test components are missing. Check CameraFollow and DashCooldownLogView.");
+				Debug.LogError("Game Scene test components are missing. Check CameraFollow, DashCooldownLogView, LocalMatchFeedbackView, and LocalQuickMatchWaitingView.");
 				return;
 			}
 

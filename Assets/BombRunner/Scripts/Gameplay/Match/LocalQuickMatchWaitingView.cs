@@ -1,15 +1,19 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
 	public sealed class LocalQuickMatchWaitingView : MonoBehaviour
 	{
-		[SerializeField] private TextMesh statusText;
-		[SerializeField] private Transform cameraTransform;
-		[SerializeField] private Vector3 fallbackWorldPosition = new(0f, 3f, 0f);
+		[SerializeField] private Text statusText;
 
-		private GameObject temporaryTextObject;
-		private bool didWarnRuntimeView;
+		private bool didWarnMissingStatusText;
+
+		private void Awake()
+		{
+			ConfigureStatusText();
+			Hide();
+		}
 
 		public void ShowWaiting(int currentParticipants, int maxParticipants)
 		{
@@ -34,6 +38,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			if (statusText != null)
 			{
 				statusText.text = "";
+				statusText.gameObject.SetActive(false);
 			}
 		}
 
@@ -47,61 +52,47 @@ namespace BombRunner.Scripts.Gameplay.Match
 			}
 
 			activeText.text = message;
-			FaceCamera(activeText.transform);
+			activeText.gameObject.SetActive(true);
 		}
 
-		private TextMesh EnsureStatusText()
+		private Text EnsureStatusText()
 		{
 			if (statusText != null)
 			{
+				ConfigureStatusText();
 				return statusText;
 			}
 
-			if (!didWarnRuntimeView)
+			if (!didWarnMissingStatusText)
 			{
-				didWarnRuntimeView = true;
-				Debug.LogWarning("LocalQuickMatchWaitingView 임시 TextMesh 생성. TODO: QuickMatchWaitingScene에 씬 배치 View 연결");
+				didWarnMissingStatusText = true;
+				Debug.LogWarning("LocalQuickMatchWaitingView에 statusText 미연결. QuickMatchWaitingScene 또는 Game 씬에 배치된 Overlay Canvas Text를 연결해야 합니다.");
 			}
 
-			if (temporaryTextObject == null)
-			{
-				temporaryTextObject = new GameObject("Temporary Quick Match Waiting Text");
-				temporaryTextObject.transform.SetParent(transform, false);
-				temporaryTextObject.transform.position = fallbackWorldPosition;
-
-				statusText = temporaryTextObject.AddComponent<TextMesh>();
-				statusText.anchor = TextAnchor.MiddleCenter;
-				statusText.alignment = TextAlignment.Center;
-				statusText.characterSize = 0.36f;
-				statusText.fontSize = 96;
-				statusText.color = new Color(0.55f, 0.95f, 1f, 1f);
-			}
-
-			return statusText;
+			return null;
 		}
 
-		private void FaceCamera(Transform target)
+		private void ConfigureStatusText()
 		{
-			var mainCamera = UnityEngine.Camera.main;
-			var activeCameraTransform = cameraTransform != null
-				? cameraTransform
-				: mainCamera != null
-					? mainCamera.transform
-					: null;
-
-			if (activeCameraTransform == null)
+			if (statusText == null)
 			{
 				return;
 			}
 
-			var direction = target.position - activeCameraTransform.position;
+			statusText.alignment = TextAnchor.MiddleCenter;
+			statusText.fontSize = 34;
+			statusText.color = new Color(0.55f, 0.95f, 1f, 1f);
+			statusText.raycastTarget = false;
+			EnsureTextFont(statusText);
+		}
 
-			if (direction.sqrMagnitude <= 0.0001f)
+		private void EnsureTextFont(Text text)
+		{
+			if (text.font == null)
 			{
-				return;
+				text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+					?? Resources.GetBuiltinResource<Font>("Arial.ttf");
 			}
-
-			target.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
 		}
 	}
 }

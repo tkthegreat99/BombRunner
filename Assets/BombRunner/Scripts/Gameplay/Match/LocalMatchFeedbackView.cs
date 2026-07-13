@@ -2,26 +2,47 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
 	public sealed class LocalMatchFeedbackView : MonoBehaviour
 	{
-		private GameObject matchResultObject;
+		[SerializeField] private Text spawnCueText;
+		[SerializeField] private Text bombStartCountdownText;
+		[SerializeField] private Text matchResultText;
+
+		private CancellationTokenSource spawnCueCancellationTokenSource;
+		private bool didWarnMissingSpawnCueText;
+		private bool didWarnMissingBombStartCountdownText;
+		private bool didWarnMissingMatchResultText;
+
+		private void Awake()
+		{
+			ConfigureScenePlacedText();
+			HideScenePlacedFeedback();
+		}
 
 		public void ShowSpawnCue(Vector3 spawnPosition, float radius, float height, float durationSeconds)
 		{
-			spawnPosition.y = height;
-			var cue = new GameObject("Temporary Bomb Spawn Cue");
-			cue.transform.position = spawnPosition;
-			cue.transform.SetParent(transform, true);
-			ConfigureRing(
-				cue,
-				radius,
-				new Color(1f, 0.78f, 0.12f, 0.8f),
-				new Color(1f, 0.28f, 0.08f, 0.8f),
-				0.08f);
-			Destroy(cue, durationSeconds);
+			if (spawnCueText == null)
+			{
+				if (!didWarnMissingSpawnCueText)
+				{
+					didWarnMissingSpawnCueText = true;
+					Debug.LogWarning("LocalMatchFeedbackView에 spawnCueText 미연결. 씬 배치 Overlay Canvas Text를 연결해야 합니다.");
+				}
+
+				return;
+			}
+
+			spawnCueCancellationTokenSource?.Cancel();
+			spawnCueCancellationTokenSource?.Dispose();
+			spawnCueCancellationTokenSource = new CancellationTokenSource();
+			spawnCueText.text = "폭탄 출현!";
+			ConfigureText(spawnCueText, new Color(1f, 0.68f, 0.08f, 1f), 34);
+			spawnCueText.gameObject.SetActive(true);
+			HideSpawnCueAfterDelayAsync(durationSeconds, spawnCueCancellationTokenSource.Token).Forget();
 		}
 
 		public void ShowExplosionDecision(
@@ -49,16 +70,56 @@ namespace BombRunner.Scripts.Gameplay.Match
 				return;
 			}
 
+			ShowTagImmuneRejectedAsync(
+				anchor,
+				cameraTransform,
+				this.GetCancellationTokenOnDestroy()).Forget();
+		}
+
+		private async UniTaskVoid ShowTagImmuneRejectedAsync(
+			Transform anchor,
+			Transform cameraTransform,
+			CancellationToken cancellationToken)
+		{
 			var textObject = CreateWorldText(
 				"Temporary Tag Immune Notice",
-				anchor.position + Vector3.up * 2.6f,
+				anchor.position + Vector3.up * 1.65f,
 				new Color(1f, 0.88f, 0.18f, 1f),
-				0.32f);
+				0.14f);
 			var textMesh = textObject.GetComponent<TextMesh>();
-			textMesh.text = "태그 면역 상태입니다!";
-			FaceCamera(textObject.transform, cameraTransform);
+			textMesh.text = "면역";
+			textMesh.fontSize = 48;
 
-			Destroy(textObject, 0.9f);
+			try
+			{
+				var elapsedTime = 0f;
+				var durationSeconds = 0.75f;
+
+				while (elapsedTime < durationSeconds)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+
+					if (anchor == null)
+					{
+						break;
+					}
+
+					elapsedTime += Time.deltaTime;
+					textObject.transform.position = anchor.position + Vector3.up * 1.65f;
+					FaceCamera(textObject.transform, cameraTransform);
+					await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+				}
+			}
+			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+			{
+			}
+			finally
+			{
+				if (textObject != null)
+				{
+					Destroy(textObject);
+				}
+			}
 		}
 
 		public async UniTask ShowBombStartCountdownAsync(
@@ -67,46 +128,136 @@ namespace BombRunner.Scripts.Gameplay.Match
 			Transform cameraTransform,
 			CancellationToken cancellationToken)
 		{
-			var countdownTextObject = CreateWorldText(
-				"Temporary Bomb Start Countdown",
-				spawnPosition + Vector3.up * 2.2f,
-				new Color(1f, 0.85f, 0.12f, 1f),
-				1.2f);
-			var countdownText = countdownTextObject.GetComponent<TextMesh>();
+			var hasCountdownText = bombStartCountdownText != null;
+
+			if (!hasCountdownText && !didWarnMissingBombStartCountdownText)
+			{
+				didWarnMissingBombStartCountdownText = true;
+				Debug.LogWarning("LocalMatchFeedbackView에 bombStartCountdownText 미연결. 씬 배치 Overlay Canvas Text를 연결해야 합니다.");
+			}
+
+			if (hasCountdownText)
+			{
+				ConfigureText(bombStartCountdownText, new Color(1f, 0.85f, 0.12f, 1f), 96);
+				bombStartCountdownText.gameObject.SetActive(true);
+			}
 
 			try
 			{
 				for (var i = Mathf.Max(0, countdown); i > 0; i--)
 				{
 					cancellationToken.ThrowIfCancellationRequested();
-					countdownText.text = i.ToString();
-					FaceCamera(countdownTextObject.transform, cameraTransform);
+
+					if (hasCountdownText)
+					{
+						bombStartCountdownText.text = i.ToString();
+					}
+
 					await UniTask.Delay(TimeSpan.FromSeconds(1), cancellationToken: cancellationToken);
 				}
 			}
 			finally
 			{
-				Destroy(countdownTextObject);
+				if (hasCountdownText)
+				{
+					bombStartCountdownText.text = "";
+					bombStartCountdownText.gameObject.SetActive(false);
+				}
 			}
 		}
 
 		public void ShowMatchEnded(string winnerLabel, Transform anchor, Transform cameraTransform)
 		{
-			if (matchResultObject != null)
+			if (matchResultText == null)
 			{
-				Destroy(matchResultObject);
+				if (!didWarnMissingMatchResultText)
+				{
+					didWarnMissingMatchResultText = true;
+					Debug.LogWarning("LocalMatchFeedbackView에 matchResultText 미연결. 씬 배치 Overlay Canvas Text를 연결해야 합니다.");
+				}
+
+				return;
 			}
 
-			var position = anchor != null ? anchor.position + Vector3.up * 3f : Vector3.up * 3f;
-			matchResultObject = CreateWorldText(
-				"Temporary Match Result",
-				position,
-				new Color(0.4f, 1f, 0.65f, 1f),
-				0.8f);
+			matchResultText.text = $"승자\n{winnerLabel}";
+			ConfigureText(matchResultText, new Color(0.4f, 1f, 0.65f, 1f), 52);
+			matchResultText.gameObject.SetActive(true);
+		}
 
-			var textMesh = matchResultObject.GetComponent<TextMesh>();
-			textMesh.text = $"Winner\n{winnerLabel}";
-			FaceCamera(matchResultObject.transform, cameraTransform);
+		private void OnDisable()
+		{
+			spawnCueCancellationTokenSource?.Cancel();
+			spawnCueCancellationTokenSource?.Dispose();
+			spawnCueCancellationTokenSource = null;
+
+			HideScenePlacedFeedback();
+		}
+
+		private void HideScenePlacedFeedback()
+		{
+			if (spawnCueText != null)
+			{
+				spawnCueText.gameObject.SetActive(false);
+			}
+
+			if (bombStartCountdownText != null)
+			{
+				bombStartCountdownText.gameObject.SetActive(false);
+			}
+
+			if (matchResultText != null)
+			{
+				matchResultText.gameObject.SetActive(false);
+			}
+		}
+
+		private void ConfigureScenePlacedText()
+		{
+			ConfigureText(spawnCueText, new Color(1f, 0.68f, 0.08f, 1f), 34);
+			ConfigureText(bombStartCountdownText, new Color(1f, 0.85f, 0.12f, 1f), 96);
+			ConfigureText(matchResultText, new Color(0.4f, 1f, 0.65f, 1f), 52);
+		}
+
+		private void ConfigureText(Text text, Color color, int fontSize)
+		{
+			if (text == null)
+			{
+				return;
+			}
+
+			text.alignment = TextAnchor.MiddleCenter;
+			text.fontSize = fontSize;
+			text.color = color;
+			text.raycastTarget = false;
+			EnsureTextFont(text);
+		}
+
+		private void EnsureTextFont(Text text)
+		{
+			if (text.font == null)
+			{
+				text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+					?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+			}
+		}
+
+		private async UniTaskVoid HideSpawnCueAfterDelayAsync(float durationSeconds, CancellationToken cancellationToken)
+		{
+			try
+			{
+				await UniTask.Delay(
+					TimeSpan.FromSeconds(Mathf.Max(0f, durationSeconds)),
+					cancellationToken: cancellationToken);
+			}
+			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+			{
+				return;
+			}
+
+			if (spawnCueText != null)
+			{
+				spawnCueText.gameObject.SetActive(false);
+			}
 		}
 
 		private GameObject CreateWorldText(string objectName, Vector3 position, Color color, float characterSize)
@@ -217,6 +368,16 @@ namespace BombRunner.Scripts.Gameplay.Match
 			float width)
 		{
 			var lineRenderer = cue.AddComponent<LineRenderer>();
+			return ConfigureRing(lineRenderer, radius, startColor, endColor, width);
+		}
+
+		private LineRenderer ConfigureRing(
+			LineRenderer lineRenderer,
+			float radius,
+			Color startColor,
+			Color endColor,
+			float width)
+		{
 			lineRenderer.loop = true;
 			lineRenderer.useWorldSpace = false;
 			lineRenderer.positionCount = 48;
@@ -297,5 +458,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 			target.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
 		}
+
 	}
 }
