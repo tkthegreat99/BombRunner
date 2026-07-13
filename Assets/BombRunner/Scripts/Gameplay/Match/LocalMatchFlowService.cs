@@ -71,6 +71,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 				controller.Exploded -= OnBombExploded;
 			}
 
+			ShowExplosionDecision(controller, downedPlayer);
+
 			var aliveCount = CountAlivePlayers();
 
 			if (aliveCount <= 1)
@@ -138,6 +140,22 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 				isSpawningBomb = false;
 			}
+		}
+
+		private void ShowExplosionDecision(BombCreatureController controller, PlayerStateController downedPlayer)
+		{
+			if (controller == null)
+			{
+				return;
+			}
+
+			matchFeedbackView.ShowExplosionDecision(
+				controller.transform.position,
+				balanceSettings.ExplosionRadius,
+				balanceSettings.ExplosionRingHeight,
+				balanceSettings.ExplosionRingExpandDurationSeconds,
+				balanceSettings.ExplosionRingHoldSeconds,
+				downedPlayer != null ? downedPlayer.transform : null);
 		}
 
 		private async UniTask DropBombAsync(

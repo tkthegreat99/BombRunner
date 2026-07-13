@@ -15,8 +15,31 @@ namespace BombRunner.Scripts.Gameplay.Match
 			var cue = new GameObject("Temporary Bomb Spawn Cue");
 			cue.transform.position = spawnPosition;
 			cue.transform.SetParent(transform, true);
-			ConfigureRing(cue, radius);
+			ConfigureRing(
+				cue,
+				radius,
+				new Color(1f, 0.78f, 0.12f, 0.8f),
+				new Color(1f, 0.28f, 0.08f, 0.8f),
+				0.08f);
 			Destroy(cue, durationSeconds);
+		}
+
+		public void ShowExplosionDecision(
+			Vector3 center,
+			float maxRadius,
+			float height,
+			float expandDurationSeconds,
+			float holdSeconds,
+			Transform selectedTarget)
+		{
+			ShowExplosionDecisionAsync(
+				center,
+				maxRadius,
+				height,
+				expandDurationSeconds,
+				holdSeconds,
+				selectedTarget,
+				this.GetCancellationTokenOnDestroy()).Forget();
 		}
 
 		public async UniTask ShowBombStartCountdownAsync(
@@ -82,18 +105,113 @@ namespace BombRunner.Scripts.Gameplay.Match
 			return textObject;
 		}
 
-		private void ConfigureRing(GameObject cue, float radius)
+		private async UniTaskVoid ShowExplosionDecisionAsync(
+			Vector3 center,
+			float maxRadius,
+			float height,
+			float expandDurationSeconds,
+			float holdSeconds,
+			Transform selectedTarget,
+			CancellationToken cancellationToken)
+		{
+			center.y = height;
+			var finalRadius = Mathf.Max(0f, maxRadius);
+
+			if (selectedTarget != null)
+			{
+				var offset = selectedTarget.position - center;
+				offset.y = 0f;
+				finalRadius = Mathf.Min(finalRadius, offset.magnitude);
+			}
+
+			var ringObject = new GameObject("Temporary Explosion Decision Ring");
+			ringObject.transform.position = center;
+			ringObject.transform.SetParent(transform, true);
+			var ring = ConfigureRing(
+				ringObject,
+				0.01f,
+				new Color(1f, 0.22f, 0.08f, 1f),
+				new Color(1f, 0.95f, 0.18f, 1f),
+				0.12f);
+			var markerObject = default(GameObject);
+
+			try
+			{
+				var elapsedTime = 0f;
+				var safeDuration = Mathf.Max(0.01f, expandDurationSeconds);
+
+				while (elapsedTime < safeDuration)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					elapsedTime += Time.deltaTime;
+					var t = Mathf.Clamp01(elapsedTime / safeDuration);
+					SetRingRadius(ring, Mathf.Lerp(0.01f, finalRadius, t));
+					await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);
+				}
+
+				SetRingRadius(ring, finalRadius);
+
+				if (selectedTarget != null)
+				{
+					markerObject = CreateSelectedTargetMarker(selectedTarget.position, height + 0.03f);
+				}
+
+				await UniTask.Delay(TimeSpan.FromSeconds(Mathf.Max(0f, holdSeconds)), cancellationToken: cancellationToken);
+			}
+			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+			{
+			}
+			finally
+			{
+				if (markerObject != null)
+				{
+					Destroy(markerObject);
+				}
+
+				if (ringObject != null)
+				{
+					Destroy(ringObject);
+				}
+			}
+		}
+
+		private GameObject CreateSelectedTargetMarker(Vector3 position, float height)
+		{
+			position.y = height;
+			var markerObject = new GameObject("Temporary Explosion Selected Target Marker");
+			markerObject.transform.position = position;
+			markerObject.transform.SetParent(transform, true);
+			ConfigureRing(
+				markerObject,
+				0.55f,
+				new Color(1f, 1f, 1f, 1f),
+				new Color(1f, 0.05f, 0.02f, 1f),
+				0.16f);
+			return markerObject;
+		}
+
+		private LineRenderer ConfigureRing(
+			GameObject cue,
+			float radius,
+			Color startColor,
+			Color endColor,
+			float width)
 		{
 			var lineRenderer = cue.AddComponent<LineRenderer>();
 			lineRenderer.loop = true;
 			lineRenderer.useWorldSpace = false;
 			lineRenderer.positionCount = 48;
-			lineRenderer.startWidth = 0.08f;
-			lineRenderer.endWidth = 0.08f;
-			lineRenderer.material = CreateTemporaryMaterial(new Color(1f, 0.78f, 0.12f, 0.42f));
-			lineRenderer.startColor = new Color(1f, 0.78f, 0.12f, 0.8f);
-			lineRenderer.endColor = new Color(1f, 0.28f, 0.08f, 0.8f);
+			lineRenderer.startWidth = width;
+			lineRenderer.endWidth = width;
+			lineRenderer.material = CreateTemporaryMaterial(startColor);
+			lineRenderer.startColor = startColor;
+			lineRenderer.endColor = endColor;
+			SetRingRadius(lineRenderer, radius);
+			return lineRenderer;
+		}
 
+		private void SetRingRadius(LineRenderer lineRenderer, float radius)
+		{
 			for (var i = 0; i < lineRenderer.positionCount; i++)
 			{
 				var angle = Mathf.PI * 2f * i / lineRenderer.positionCount;

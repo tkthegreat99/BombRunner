@@ -173,7 +173,6 @@ namespace BombRunner.Scripts.Bomb
 			hasExploded = true;
 			transform.localScale = baseScale;
 			var downedPlayer = ResolveClosestPlayerDown();
-			ShowTemporaryExplosionRadius();
 			Exploded?.Invoke(this, downedPlayer);
 		}
 

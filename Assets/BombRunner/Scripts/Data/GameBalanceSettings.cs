@@ -28,6 +28,9 @@ namespace BombRunner.Scripts.Data
 		[SerializeField] private float bombDownedBoostSpeedMultiplier = 1.45f;
 		[SerializeField] private float bombDownedBoostDurationSeconds = 0.75f;
 		[SerializeField] private float bombDownedBoostCooldownSeconds = 1f;
+		[SerializeField] private float explosionRingExpandDurationSeconds = 0.35f;
+		[SerializeField] private float explosionRingHoldSeconds = 0.45f;
+		[SerializeField] private float explosionRingHeight = 0.08f;
 		[SerializeField] private float spawnCueDurationSeconds = 1.6f;
 		[SerializeField] private float spawnCueRadius = 1.2f;
 		[SerializeField] private float spawnCueHeight = 0.03f;
@@ -64,6 +67,9 @@ namespace BombRunner.Scripts.Data
 		public float BombDownedBoostSpeedMultiplier => Mathf.Max(1f, bombDownedBoostSpeedMultiplier);
 		public float BombDownedBoostDurationSeconds => Mathf.Max(0f, bombDownedBoostDurationSeconds);
 		public float BombDownedBoostCooldownSeconds => Mathf.Max(0f, bombDownedBoostCooldownSeconds);
+		public float ExplosionRingExpandDurationSeconds => Mathf.Max(0.01f, explosionRingExpandDurationSeconds);
+		public float ExplosionRingHoldSeconds => Mathf.Max(0f, explosionRingHoldSeconds);
+		public float ExplosionRingHeight => Mathf.Max(0f, explosionRingHeight);
 		public float SpawnCueDurationSeconds => Mathf.Max(0f, spawnCueDurationSeconds);
 		public float SpawnCueRadius => Mathf.Max(0f, spawnCueRadius);
 		public float SpawnCueHeight => Mathf.Max(0f, spawnCueHeight);
