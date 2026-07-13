@@ -7,8 +7,8 @@ namespace BombRunner.Scripts.Localization
 {
 	public sealed class LocalizationService
 	{
-		private const string DefaultLanguageCode = "ko";
-		private const string SecondaryFallbackLanguageCode = "en";
+		private const string DefaultLanguageCode = "en";
+		private const string SecondaryFallbackLanguageCode = "ko";
 		private const string ResourceFolder = "Localization";
 
 		private readonly Dictionary<string, string> activeEntries = new();

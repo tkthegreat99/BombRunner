@@ -23,6 +23,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly LocalPlayerSeparationService localPlayerSeparationService;
 		private readonly LocalDownedObstacleService localDownedObstacleService;
 		private readonly LocalTauntPrototype localTauntPrototype;
+		private readonly LocalWorldFeedbackView localWorldFeedbackView;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
 
 		public StageManager(
@@ -36,7 +37,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 			LocalMatchFlowService localMatchFlowService,
 			LocalPlayerSeparationService localPlayerSeparationService,
 			LocalDownedObstacleService localDownedObstacleService,
-			LocalTauntPrototype localTauntPrototype)
+			LocalTauntPrototype localTauntPrototype,
+			LocalWorldFeedbackView localWorldFeedbackView)
 		{
 			this.sceneFlowService = sceneFlowService;
 			this.playerSpawnService = playerSpawnService;
@@ -49,6 +51,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.localPlayerSeparationService = localPlayerSeparationService;
 			this.localDownedObstacleService = localDownedObstacleService;
 			this.localTauntPrototype = localTauntPrototype;
+			this.localWorldFeedbackView = localWorldFeedbackView;
 		}
 
 		// 임시 로컬 검증용 진입점. 실제 멀티플레이가 들어오면 네트워크 스폰과 Host 권한 흐름으로 교체.
@@ -112,6 +115,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			localPlayerSeparationService.Initialize(players);
 			localDownedObstacleService.Initialize(players);
 			localTauntPrototype.Initialize(players);
+			localWorldFeedbackView.Initialize(players);
 		}
 	}
 }

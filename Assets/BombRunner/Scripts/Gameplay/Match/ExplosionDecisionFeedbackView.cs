@@ -19,7 +19,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		[SerializeField] private Color selectedMarkerStartColor = new(1f, 1f, 1f, 1f);
 		[SerializeField] private Color selectedMarkerEndColor = new(1f, 0.05f, 0.02f, 1f);
 
-		private bool didWarnMissingExplosionRing;
+		private Material ringMaterial;
 
 		public void Play(
 			Vector3 center,
@@ -102,18 +102,60 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private bool EnsureRequiredReferences()
 		{
-			if (explosionRing != null)
+			if (explosionRing == null)
 			{
-				return true;
+				explosionRing = CreateRingRenderer("Explosion Ring");
 			}
 
-			if (!didWarnMissingExplosionRing)
+			if (selectedVictimMarker == null)
 			{
-				didWarnMissingExplosionRing = true;
-				Debug.LogWarning("ExplosionDecisionFeedbackView에 explosionRing 미연결. prefab의 LineRenderer를 연결해야 합니다.");
+				selectedVictimMarker = CreateRingRenderer("Selected Victim Marker");
+				selectedVictimMarker.gameObject.SetActive(false);
 			}
 
-			return false;
+			return explosionRing != null;
+		}
+
+		private LineRenderer CreateRingRenderer(string objectName)
+		{
+			var ringObject = new GameObject(objectName);
+			ringObject.transform.SetParent(transform, false);
+			var lineRenderer = ringObject.AddComponent<LineRenderer>();
+			lineRenderer.material = GetRingMaterial();
+			return lineRenderer;
+		}
+
+		private Material GetRingMaterial()
+		{
+			if (ringMaterial != null)
+			{
+				return ringMaterial;
+			}
+
+			var shader = Shader.Find("Universal Render Pipeline/Unlit");
+
+			if (shader == null)
+			{
+				shader = Shader.Find("Sprites/Default");
+			}
+
+			ringMaterial = new Material(shader);
+			SetMaterialFloatIfPresent(ringMaterial, "_Surface", 1f);
+			SetMaterialFloatIfPresent(ringMaterial, "_Blend", 0f);
+			SetMaterialFloatIfPresent(ringMaterial, "_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+			SetMaterialFloatIfPresent(ringMaterial, "_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+			SetMaterialFloatIfPresent(ringMaterial, "_ZWrite", 0f);
+			ringMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+			ringMaterial.renderQueue = 3000;
+			return ringMaterial;
+		}
+
+		private void SetMaterialFloatIfPresent(Material material, string propertyName, float value)
+		{
+			if (material.HasProperty(propertyName))
+			{
+				material.SetFloat(propertyName, value);
+			}
 		}
 
 		private void ConfigureSelectedVictimMarker(Transform selectedTarget, float height)
@@ -167,6 +209,14 @@ namespace BombRunner.Scripts.Gameplay.Match
 					0f,
 					Mathf.Sin(angle) * radius);
 				lineRenderer.SetPosition(i, position);
+			}
+		}
+
+		private void OnDestroy()
+		{
+			if (ringMaterial != null)
+			{
+				Destroy(ringMaterial);
 			}
 		}
 	}

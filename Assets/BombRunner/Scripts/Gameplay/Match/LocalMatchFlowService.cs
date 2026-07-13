@@ -16,9 +16,9 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly GameBalanceSettings balanceSettings;
 		private readonly LocalPlayerCameraFollow cameraFollow;
 		private readonly LocalMatchFeedbackView matchFeedbackView;
+		private readonly LocalBombSpawnCameraFocusView bombSpawnCameraFocusView;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
 		private PlayerStateController[] players;
-		private GameObject cameraFocusTarget;
 		private bool isInitialized;
 		private bool isMatchEnded;
 		private bool isSpawningBomb;
@@ -28,13 +28,15 @@ namespace BombRunner.Scripts.Gameplay.Match
 			BombTargetService bombTargetService,
 			GameBalanceSettings balanceSettings,
 			LocalPlayerCameraFollow cameraFollow,
-			LocalMatchFeedbackView matchFeedbackView)
+			LocalMatchFeedbackView matchFeedbackView,
+			LocalBombSpawnCameraFocusView bombSpawnCameraFocusView)
 		{
 			this.bombSpawnService = bombSpawnService;
 			this.bombTargetService = bombTargetService;
 			this.balanceSettings = balanceSettings;
 			this.cameraFollow = cameraFollow;
 			this.matchFeedbackView = matchFeedbackView;
+			this.bombSpawnCameraFocusView = bombSpawnCameraFocusView;
 		}
 
 		public void Initialize(PlayerStateController[] players)
@@ -130,8 +132,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 			}
 			finally
 			{
-				ClearCameraFocus();
-
 				if (!isMatchEnded)
 				{
 					cameraFollow.SetTarget(GetCameraReturnTarget(), true);
@@ -198,22 +198,9 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private void FocusCameraOnSpawn(Vector3 spawnPosition)
 		{
-			ClearCameraFocus();
-			cameraFocusTarget = new GameObject("Temporary Bomb Spawn Camera Focus");
-			cameraFocusTarget.transform.position = spawnPosition;
-			cameraFollow.SetTarget(cameraFocusTarget.transform, false);
+			bombSpawnCameraFocusView.SetPosition(spawnPosition);
+			cameraFollow.SetTarget(bombSpawnCameraFocusView.Target, false);
 			Debug.Log("Local match flow: camera focused on next bomb spawn");
-		}
-
-		private void ClearCameraFocus()
-		{
-			if (cameraFocusTarget == null)
-			{
-				return;
-			}
-
-			UnityEngine.Object.Destroy(cameraFocusTarget);
-			cameraFocusTarget = null;
 		}
 
 		private Transform GetCameraReturnTarget()
@@ -291,7 +278,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 			SetPlayersInputEnabled(false);
 			bombSpawnService.DespawnLocalBomb(controller);
 			bombTargetService.ClearTarget();
-			ClearCameraFocus();
 			cameraFollow.SetTarget(GetCameraReturnTarget(), true);
 
 			var winner = GetWinner();

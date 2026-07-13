@@ -144,7 +144,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d43d0812ab2b440ca2bef2abda458239, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetIndicatorRoot: {fileID: 200000}
+  targetIndicatorRoot: {fileID: 0}
   invulnerableIndicatorRoot: {fileID: 300000}
 --- !u!114 &100010
 MonoBehaviour:

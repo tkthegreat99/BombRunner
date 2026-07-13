@@ -23,6 +23,8 @@ namespace BombRunner.Scripts.App
 		[SerializeField] private DashCooldownLogView dashCooldownLogView;
 		[SerializeField] private LocalMatchFeedbackView matchFeedbackView;
 		[SerializeField] private LocalQuickMatchWaitingView quickMatchWaitingView;
+		[SerializeField] private LocalWorldFeedbackView worldFeedbackView;
+		[SerializeField] private LocalBombSpawnCameraFocusView bombSpawnCameraFocusView;
 
 		protected override LifetimeScope FindParent()
 		{
@@ -120,9 +122,24 @@ namespace BombRunner.Scripts.App
 				quickMatchWaitingView = FindFirstObjectByType<LocalQuickMatchWaitingView>();
 			}
 
-			if (cameraFollow == null || dashCooldownLogView == null || matchFeedbackView == null || quickMatchWaitingView == null)
+			if (worldFeedbackView == null)
 			{
-				Debug.LogError("Game Scene test components are missing. Check CameraFollow, DashCooldownLogView, LocalMatchFeedbackView, and LocalQuickMatchWaitingView.");
+				worldFeedbackView = FindFirstObjectByType<LocalWorldFeedbackView>();
+			}
+
+			if (bombSpawnCameraFocusView == null)
+			{
+				bombSpawnCameraFocusView = FindFirstObjectByType<LocalBombSpawnCameraFocusView>();
+			}
+
+			if (cameraFollow == null
+				|| dashCooldownLogView == null
+				|| matchFeedbackView == null
+				|| quickMatchWaitingView == null
+				|| worldFeedbackView == null
+				|| bombSpawnCameraFocusView == null)
+			{
+				Debug.LogError("Game Scene test components are missing. Check CameraFollow, DashCooldownLogView, LocalMatchFeedbackView, LocalQuickMatchWaitingView, LocalWorldFeedbackView, and LocalBombSpawnCameraFocusView.");
 				return;
 			}
 
@@ -131,6 +148,8 @@ namespace BombRunner.Scripts.App
 			builder.RegisterComponent(dashCooldownLogView);
 			builder.RegisterComponent(matchFeedbackView);
 			builder.RegisterComponent(quickMatchWaitingView);
+			builder.RegisterComponent(worldFeedbackView);
+			builder.RegisterComponent(bombSpawnCameraFocusView);
 			builder.RegisterInstance(activeSpawnSettings);
 			builder.RegisterInstance(activeBombSpawnSettings);
 			builder.RegisterInstance(activeBalanceSettings);

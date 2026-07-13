@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -239,7 +239,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -494,7 +494,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -560,13 +560,20 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   parentReference:
-    TypeName: 
+    TypeName:
   autoRun: 1
   autoInjectGameObjects: []
   playerInputReader: {fileID: 2100000003}
+  gameSettings: {fileID: 0}
   playerSpawnSettings: {fileID: 11400000, guid: 59b0d9d0b44345d08bc9d7d74888d885, type: 2}
+  bombSpawnSettings: {fileID: 0}
+  gameBalanceSettings: {fileID: 0}
   cameraFollow: {fileID: 385874531}
   dashCooldownLogView: {fileID: 2100000004}
+  matchFeedbackView: {fileID: 2200000005}
+  quickMatchWaitingView: {fileID: 2200000006}
+  worldFeedbackView: {fileID: 2300000002}
+  bombSpawnCameraFocusView: {fileID: 2400000002}
 --- !u!114 &2100000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -577,8 +584,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 351dad4abccb4f1bb14eab039c72a833, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   inputActions: {fileID: -944628639613478452, guid: 06c8f6d94a1b4a4997cc3b217913d962, type: 3}
 --- !u!114 &2100000004
 MonoBehaviour:
@@ -590,8 +597,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8259a0d03bf245b793c1e6cbb897d9c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &2200000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -681,6 +688,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &2200000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -713,6 +721,9 @@ MonoBehaviour:
   spawnCueText: {fileID: 2200000203}
   bombStartCountdownText: {fileID: 2200000303}
   matchResultText: {fileID: 2200000403}
+  worldFeedbackRoot: {fileID: 2300000001}
+  explosionDecisionFeedbackPrefab: {fileID: 100002, guid: 4d79e4c842d64f12b95da61fe9437ad8, type: 3}
+  tagImmuneFeedbackPrefab: {fileID: 100002, guid: b8f25464d81d4ad1adf7b5a4e7dfb5a4, type: 3}
 --- !u!114 &2200000006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1042,6 +1053,98 @@ MonoBehaviour:
     m_VerticalOverflow: 1
     m_LineSpacing: 1
   m_Text:
+--- !u!1 &2300000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2300000001}
+  - component: {fileID: 2300000002}
+  m_Layer: 0
+  m_Name: Local World Feedback View
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2300000001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2300000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2300000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2300000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60266bbd7fc740dbb2d11868229979ad, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  feedbackRoot: {fileID: 2300000001}
+  targetMarkerPrefab: {fileID: 100002, guid: 27d4f90e3372443997161497d8cd0f8c, type: 3}
+  bombTargetLinkPrefab: {fileID: 100002, guid: 5530c56e749a4a14bda9892caedb674d, type: 3}
+  tauntAreaPrefab: {fileID: 100002, guid: 2845169c948c450a98f25dc8a590f5ef, type: 3}
+--- !u!1 &2400000000
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2400000001}
+  - component: {fileID: 2400000002}
+  m_Layer: 0
+  m_Name: Local Bomb Spawn Camera Focus View
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2400000001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2400000000}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2400000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2400000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2c062ce82714301b7bba83268dffc58, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1051,3 +1154,5 @@ SceneRoots:
   - {fileID: 2100000001}
   - {fileID: 1134052456}
   - {fileID: 2200000001}
+  - {fileID: 2300000001}
+  - {fileID: 2400000001}
