@@ -6,7 +6,7 @@
 - Async gameplay timing uses UniTask.
 - Input uses Unity New Input System.
 - Current prototype has scene flow, local quick-match waiting, local player spawning, dummy spawning, dash, target toss, taunt, local bomb spawn, bomb chase phases, closest-player downing, and one-survivor match end.
-- `Game` scene uses a scene-placed Overlay Canvas bridge for quick-match waiting status and the first pass of local match feedback.
+- `Game` scene uses scene-placed bridge Views for quick-match waiting status, local match feedback, local world feedback, and bomb-spawn camera focus.
 
 ## Current Design Source
 - `Docs/BombRunner_수정 기획.txt` is the active design source.
@@ -34,5 +34,6 @@
 - Final networking stack is not confirmed in code.
 - Actual voice chat provider is not selected.
 - Pooling and UI systems are still prototype-level.
-- Localization is required before UI text hardens; visible player-facing strings should move to localization keys.
-- Remaining temporary runtime feedback includes explosion decision visuals, selected victim markers, and tag immunity rejection text.
+- Localization foundation exists for the current prototype UI strings with `en` and `ko` resources. Both resources currently display English copy until the font/localized glyph strategy is confirmed.
+- Target marker, bomb-target link, taunt dash-lock area, explosion decision ring, selected victim marker, and tag immunity feedback now have prefab/View entry points.
+- Remaining temporary feedback cleanup is inside prototype presentation internals, such as fallback-created line renderers/materials and final art/pooling decisions.
