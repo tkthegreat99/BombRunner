@@ -7,6 +7,13 @@
       "dependencies": {},
       "hash": "e5acc106ee196bc5a32fb14cdf2987b0f96d11e0"
     },
+    "com.rlabrecque.steamworks.net": {
+      "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#2025.163.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "98d6584e4509dd514768cc28c3f02026fbdd6cc7"
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.9",
       "depth": 0,
