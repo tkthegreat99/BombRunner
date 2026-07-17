@@ -1,12 +1,10 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Steamworks;
+using Steamworks.Data;
 using UnityEngine;
 using VContainer.Unity;
-
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-using Steamworks;
-#endif
 
 namespace BombRunner.Scripts.Multiplayer
 {
@@ -16,22 +14,11 @@ namespace BombRunner.Scripts.Multiplayer
 		private const string MatchStateKey = "match_state";
 
 		private readonly ISteamworksClientService steamworksClientService;
-		private UniTaskCompletionSource<bool> pendingCreateLobby;
-		private UniTaskCompletionSource<bool> pendingJoinLobby;
-
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-		private readonly CallResult<LobbyCreated_t> lobbyCreatedResult;
-		private readonly CallResult<LobbyEnter_t> lobbyEnterResult;
-		private readonly Callback<LobbyEnter_t> lobbyEnterCallback;
-		private readonly Callback<LobbyChatUpdate_t> lobbyChatUpdateCallback;
-		private readonly Callback<LobbyDataUpdate_t> lobbyDataUpdateCallback;
-		private readonly Callback<GameLobbyJoinRequested_t> gameLobbyJoinRequestedCallback;
-		private CSteamID currentLobbyId = CSteamID.Nil;
-#endif
+		private Lobby currentLobby;
 
 		public event Action Changed;
 
-		public bool IsAvailable => steamworksClientService.IsInitialized;
+		public bool IsAvailable => SteamClient.IsValid;
 		public bool IsInLobby { get; private set; }
 		public bool IsLobbyOwner { get; private set; }
 		public ulong CurrentLobbyId { get; private set; }
@@ -42,19 +29,15 @@ namespace BombRunner.Scripts.Multiplayer
 		public SteamLobbyService(ISteamworksClientService steamworksClientService)
 		{
 			this.steamworksClientService = steamworksClientService;
-
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			lobbyCreatedResult = CallResult<LobbyCreated_t>.Create(OnLobbyCreated);
-			lobbyEnterResult = CallResult<LobbyEnter_t>.Create(OnLobbyEnterResult);
-			lobbyEnterCallback = Callback<LobbyEnter_t>.Create(OnLobbyEntered);
-			lobbyChatUpdateCallback = Callback<LobbyChatUpdate_t>.Create(OnLobbyChatUpdated);
-			lobbyDataUpdateCallback = Callback<LobbyDataUpdate_t>.Create(OnLobbyDataUpdated);
-			gameLobbyJoinRequestedCallback = Callback<GameLobbyJoinRequested_t>.Create(OnGameLobbyJoinRequested);
-#endif
 		}
 
 		public void Start()
 		{
+			SteamMatchmaking.OnLobbyEntered += OnLobbyEntered;
+			SteamMatchmaking.OnLobbyMemberJoined += OnLobbyMemberChanged;
+			SteamMatchmaking.OnLobbyMemberLeave += OnLobbyMemberChanged;
+			SteamMatchmaking.OnLobbyDataChanged += OnLobbyDataChanged;
+			SteamFriends.OnGameLobbyJoinRequested += OnGameLobbyJoinRequested;
 			TryJoinCommandLineLobbyAsync().Forget();
 		}
 
@@ -65,7 +48,6 @@ namespace BombRunner.Scripts.Multiplayer
 				return false;
 			}
 
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
 			if (IsInLobby)
 			{
 				return true;
@@ -73,18 +55,27 @@ namespace BombRunner.Scripts.Multiplayer
 
 			MaxMembers = Mathf.Max(1, maxMembers);
 			MatchState = SteamLobbyMatchState.Waiting;
-			pendingCreateLobby = new UniTaskCompletionSource<bool>();
-			var apiCall = SteamMatchmaking.CreateLobby(ELobbyType.k_ELobbyTypeFriendsOnly, MaxMembers);
-			lobbyCreatedResult.Set(apiCall);
+			var lobbyResult = await SteamMatchmaking.CreateLobbyAsync(MaxMembers);
 
-			using (cancellationToken.Register(() => pendingCreateLobby.TrySetCanceled(cancellationToken)))
+			if (cancellationToken.IsCancellationRequested)
 			{
-				return await pendingCreateLobby.Task;
+				return false;
 			}
-#else
-			await UniTask.Yield(cancellationToken);
-			return false;
-#endif
+
+			if (!lobbyResult.HasValue)
+			{
+				Debug.LogWarning("Facepunch Steam lobby creation failed.");
+				return false;
+			}
+
+			currentLobby = lobbyResult.Value;
+			currentLobby.SetFriendsOnly();
+			currentLobby.SetJoinable(true);
+			currentLobby.SetData(LobbyNameKey, $"{steamworksClientService.PersonaName}'s Boom Runner Lobby");
+			currentLobby.SetData(MatchStateKey, SteamLobbyMatchState.Waiting);
+			ApplyLobbyState(currentLobby);
+			Debug.Log($"Facepunch Steam lobby created: {CurrentLobbyId}");
+			return true;
 		}
 
 		public async UniTask<bool> JoinLobbyAsync(ulong lobbyId, CancellationToken cancellationToken)
@@ -94,69 +85,92 @@ namespace BombRunner.Scripts.Multiplayer
 				return false;
 			}
 
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			pendingJoinLobby = new UniTaskCompletionSource<bool>();
-			var apiCall = SteamMatchmaking.JoinLobby(new CSteamID(lobbyId));
-			lobbyEnterResult.Set(apiCall);
+			var lobbyResult = await SteamMatchmaking.JoinLobbyAsync(lobbyId);
 
-			using (cancellationToken.Register(() => pendingJoinLobby.TrySetCanceled(cancellationToken)))
+			if (cancellationToken.IsCancellationRequested)
 			{
-				return await pendingJoinLobby.Task;
+				return false;
 			}
-#else
-			await UniTask.Yield(cancellationToken);
-			return false;
-#endif
+
+			if (!lobbyResult.HasValue)
+			{
+				Debug.LogWarning($"Facepunch Steam lobby join failed: {lobbyId}");
+				return false;
+			}
+
+			ApplyLobbyState(lobbyResult.Value);
+			Debug.Log($"Facepunch Steam lobby joined: {CurrentLobbyId}, members={CurrentMemberCount}");
+			return true;
+		}
+
+		public ulong GetLobbyOwnerSteamId()
+		{
+			return IsInLobby ? currentLobby.Owner.Id.Value : 0;
+		}
+
+		public ulong[] GetLobbyMemberSteamIds()
+		{
+			if (!IsInLobby)
+			{
+				return Array.Empty<ulong>();
+			}
+
+			var memberIds = new ulong[Mathf.Max(0, currentLobby.MemberCount)];
+			var index = 0;
+
+			foreach (var member in currentLobby.Members)
+			{
+				if (index >= memberIds.Length)
+				{
+					break;
+				}
+
+				memberIds[index] = member.Id.Value;
+				index++;
+			}
+
+			return memberIds;
 		}
 
 		public void LeaveLobby()
 		{
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			if (IsAvailable && IsInLobby)
+			if (IsInLobby)
 			{
-				SteamMatchmaking.LeaveLobby(currentLobbyId);
+				currentLobby.Leave();
 			}
-#endif
 
 			ClearLobbyState();
 		}
 
 		public void OpenInviteDialog()
 		{
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			if (IsAvailable && IsInLobby)
+			if (IsInLobby)
 			{
-				SteamFriends.ActivateGameOverlayInviteDialog(currentLobbyId);
+				SteamFriends.OpenGameInviteOverlay(currentLobby.Id);
 			}
-#endif
 		}
 
 		public void SetMatchState(string matchState)
 		{
 			MatchState = string.IsNullOrWhiteSpace(matchState) ? SteamLobbyMatchState.Waiting : matchState;
 
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			if (IsAvailable && IsInLobby && IsLobbyOwner)
+			if (IsInLobby && IsLobbyOwner)
 			{
-				SteamMatchmaking.SetLobbyData(currentLobbyId, MatchStateKey, MatchState);
+				currentLobby.SetData(MatchStateKey, MatchState);
 			}
-#endif
 
 			Changed?.Invoke();
 		}
 
 		public void Dispose()
 		{
+			SteamMatchmaking.OnLobbyEntered -= OnLobbyEntered;
+			SteamMatchmaking.OnLobbyMemberJoined -= OnLobbyMemberChanged;
+			SteamMatchmaking.OnLobbyMemberLeave -= OnLobbyMemberChanged;
+			SteamMatchmaking.OnLobbyDataChanged -= OnLobbyDataChanged;
+			SteamFriends.OnGameLobbyJoinRequested -= OnGameLobbyJoinRequested;
 			LeaveLobby();
-
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			lobbyCreatedResult.Dispose();
-			lobbyEnterResult.Dispose();
-			lobbyEnterCallback.Dispose();
-			lobbyChatUpdateCallback.Dispose();
-			lobbyDataUpdateCallback.Dispose();
-			gameLobbyJoinRequestedCallback.Dispose();
-#endif
+			Changed = null;
 		}
 
 		private async UniTaskVoid TryJoinCommandLineLobbyAsync()
@@ -192,107 +206,54 @@ namespace BombRunner.Scripts.Multiplayer
 			}
 		}
 
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-		private void OnLobbyCreated(LobbyCreated_t callback, bool ioFailure)
+		private void OnLobbyEntered(Lobby lobby)
 		{
-			if (ioFailure || callback.m_eResult != EResult.k_EResultOK)
-			{
-				Debug.LogWarning($"Steam lobby create failed: ioFailure={ioFailure}, result={callback.m_eResult}");
-				pendingCreateLobby?.TrySetResult(false);
-				return;
-			}
+			ApplyLobbyState(lobby);
+		}
 
-			currentLobbyId = new CSteamID(callback.m_ulSteamIDLobby);
-			CurrentLobbyId = callback.m_ulSteamIDLobby;
+		private void OnLobbyMemberChanged(Lobby lobby, Friend friend)
+		{
+			if (IsSameLobby(lobby))
+			{
+				ApplyLobbyState(lobby);
+			}
+		}
+
+		private void OnLobbyDataChanged(Lobby lobby)
+		{
+			if (IsSameLobby(lobby))
+			{
+				ApplyLobbyState(lobby);
+			}
+		}
+
+		private void OnGameLobbyJoinRequested(Lobby lobby, SteamId steamId)
+		{
+			Debug.Log($"Facepunch Steam lobby join requested: lobby={lobby.Id.Value}, friend={steamId.Value}");
+			JoinLobbyAsync(lobby.Id.Value, CancellationToken.None).Forget();
+		}
+
+		private bool IsSameLobby(Lobby lobby)
+		{
+			return IsInLobby && lobby.Id.Value == CurrentLobbyId;
+		}
+
+		private void ApplyLobbyState(Lobby lobby)
+		{
+			currentLobby = lobby;
 			IsInLobby = true;
-			IsLobbyOwner = true;
-			CurrentMemberCount = SteamMatchmaking.GetNumLobbyMembers(currentLobbyId);
-			SteamMatchmaking.SetLobbyData(currentLobbyId, LobbyNameKey, $"{steamworksClientService.PersonaName}'s Boom Runner Lobby");
-			SteamMatchmaking.SetLobbyData(currentLobbyId, MatchStateKey, SteamLobbyMatchState.Waiting);
-			Debug.Log($"Steam lobby created: {CurrentLobbyId}");
-			pendingCreateLobby?.TrySetResult(true);
-			Changed?.Invoke();
-		}
+			CurrentLobbyId = lobby.Id.Value;
+			CurrentMemberCount = lobby.MemberCount;
+			IsLobbyOwner = lobby.Owner.Id.Value == steamworksClientService.LocalSteamId;
 
-		private void OnLobbyEnterResult(LobbyEnter_t callback, bool ioFailure)
-		{
-			if (ioFailure || callback.m_EChatRoomEnterResponse != (uint)EChatRoomEnterResponse.k_EChatRoomEnterResponseSuccess)
-			{
-				Debug.LogWarning($"Steam lobby join failed: ioFailure={ioFailure}, response={callback.m_EChatRoomEnterResponse}");
-				pendingJoinLobby?.TrySetResult(false);
-				return;
-			}
-
-			ApplyEnteredLobby(new CSteamID(callback.m_ulSteamIDLobby));
-			pendingJoinLobby?.TrySetResult(true);
-		}
-
-		private void OnLobbyEntered(LobbyEnter_t callback)
-		{
-			if (callback.m_EChatRoomEnterResponse != (uint)EChatRoomEnterResponse.k_EChatRoomEnterResponseSuccess)
-			{
-				return;
-			}
-
-			ApplyEnteredLobby(new CSteamID(callback.m_ulSteamIDLobby));
-		}
-
-		private void OnLobbyChatUpdated(LobbyChatUpdate_t callback)
-		{
-			if (!IsInLobby || callback.m_ulSteamIDLobby != CurrentLobbyId)
-			{
-				return;
-			}
-
-			RefreshLobbyState();
-		}
-
-		private void OnLobbyDataUpdated(LobbyDataUpdate_t callback)
-		{
-			if (!IsInLobby || callback.m_ulSteamIDLobby != CurrentLobbyId)
-			{
-				return;
-			}
-
-			RefreshLobbyState();
-		}
-
-		private void OnGameLobbyJoinRequested(GameLobbyJoinRequested_t callback)
-		{
-			Debug.Log($"Steam lobby join requested: lobby={callback.m_steamIDLobby.m_SteamID}");
-			JoinLobbyAsync(callback.m_steamIDLobby.m_SteamID, CancellationToken.None).Forget();
-		}
-
-		private void ApplyEnteredLobby(CSteamID lobbyId)
-		{
-			currentLobbyId = lobbyId;
-			CurrentLobbyId = lobbyId.m_SteamID;
-			IsInLobby = true;
-			RefreshLobbyState();
-			Debug.Log($"Steam lobby entered: {CurrentLobbyId}, members={CurrentMemberCount}");
-		}
-
-		private void RefreshLobbyState()
-		{
-			if (!IsAvailable || !IsInLobby)
-			{
-				return;
-			}
-
-			CurrentMemberCount = SteamMatchmaking.GetNumLobbyMembers(currentLobbyId);
-			var owner = SteamMatchmaking.GetLobbyOwner(currentLobbyId);
-			IsLobbyOwner = owner.m_SteamID == steamworksClientService.LocalSteamId;
-			var matchState = SteamMatchmaking.GetLobbyData(currentLobbyId, MatchStateKey);
+			var matchState = lobby.GetData(MatchStateKey);
 			MatchState = string.IsNullOrWhiteSpace(matchState) ? SteamLobbyMatchState.Waiting : matchState;
 			Changed?.Invoke();
 		}
-#endif
 
 		private void ClearLobbyState()
 		{
-#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_LINUX || UNITY_STANDALONE_OSX || STEAMWORKS_WIN || STEAMWORKS_LIN_OSX
-			currentLobbyId = CSteamID.Nil;
-#endif
+			currentLobby = default;
 			IsInLobby = false;
 			IsLobbyOwner = false;
 			CurrentLobbyId = 0;

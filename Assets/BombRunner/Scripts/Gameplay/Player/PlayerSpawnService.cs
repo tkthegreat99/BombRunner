@@ -1,3 +1,4 @@
+using System;
 using BombRunner.Scripts.Data;
 using UnityEngine;
 using VContainer;
@@ -11,6 +12,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 		private readonly PlayerSpawnSettings spawnSettings;
 		private readonly GameBalanceSettings balanceSettings;
 		private readonly GameObject[] dummyPlayers = new GameObject[2];
+		private GameObject[] steamPlayers = Array.Empty<GameObject>();
 		private GameObject localPlayer;
 
 		public PlayerSpawnService(
@@ -66,6 +68,53 @@ namespace BombRunner.Scripts.Gameplay.Player
 			return dummyPlayers;
 		}
 
+		public GameObject[] SpawnSteamLobbyPlayers(ulong[] memberSteamIds, ulong localSteamId)
+		{
+			if (memberSteamIds == null || memberSteamIds.Length == 0)
+			{
+				return Array.Empty<GameObject>();
+			}
+
+			if (steamPlayers.Length == memberSteamIds.Length && steamPlayers.Length > 0)
+			{
+				return steamPlayers;
+			}
+
+			if (spawnSettings.PlayerPrefab == null)
+			{
+				Debug.LogError("PlayerSpawnSettings PlayerPrefab is missing.");
+				return Array.Empty<GameObject>();
+			}
+
+			steamPlayers = new GameObject[memberSteamIds.Length];
+
+			for (var i = 0; i < memberSteamIds.Length; i++)
+			{
+				var memberSteamId = memberSteamIds[i];
+				var isLocalPlayer = memberSteamId == localSteamId;
+				var playerLabel = isLocalPlayer ? "Local Player" : $"Steam Player {i + 1}";
+				var player = objectResolver.Instantiate(
+					spawnSettings.PlayerPrefab,
+					GetSteamSpawnPosition(i, memberSteamIds.Length),
+					Quaternion.identity);
+
+				player.name = playerLabel;
+				ApplySettings(player);
+				ApplyPlayerState(player, playerLabel);
+				ApplyNetworkIdentity(player, memberSteamId);
+				SetInputEnabled(player, isLocalPlayer);
+
+				if (isLocalPlayer)
+				{
+					localPlayer = player;
+				}
+
+				steamPlayers[i] = player;
+			}
+
+			return steamPlayers;
+		}
+
 		private void SpawnDummyPlayer(int index, Vector3 spawnPosition, string playerLabel)
 		{
 			if (dummyPlayers[index] != null)
@@ -84,6 +133,18 @@ namespace BombRunner.Scripts.Gameplay.Player
 			ApplyPlayerState(dummyPlayer, playerLabel);
 			SetInputEnabled(dummyPlayer, false);
 			dummyPlayers[index] = dummyPlayer;
+		}
+
+		private Vector3 GetSteamSpawnPosition(int index, int playerCount)
+		{
+			if (playerCount <= 1)
+			{
+				return spawnSettings.SpawnPosition;
+			}
+
+			var angle = Mathf.PI * 2f * index / playerCount;
+			var offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 3f;
+			return spawnSettings.SpawnPosition + offset;
 		}
 
 		private void ApplySettings(GameObject player)
@@ -121,6 +182,16 @@ namespace BombRunner.Scripts.Gameplay.Player
 			stateController.SetTarget(false);
 			stateController.SetTaunting(false);
 			stateController.SetDashLocked(false);
+		}
+
+		private void ApplyNetworkIdentity(GameObject player, ulong steamId)
+		{
+			if (!player.TryGetComponent<PlayerNetworkIdentity>(out var networkIdentity))
+			{
+				networkIdentity = player.AddComponent<PlayerNetworkIdentity>();
+			}
+
+			networkIdentity.SetSteamId(steamId);
 		}
 
 		private void SetInputEnabled(GameObject player, bool isInputEnabled)

@@ -4,6 +4,7 @@
         "UniTask",
         "VContainer",
         "Unity.InputSystem",
-        "com.rlabrecque.steamworks.net"
+        "Unity.Netcode.Runtime",
+        "Facepunch Transport for Netcode for GameObjects"
     ]
 }

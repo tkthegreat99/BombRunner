@@ -20,6 +20,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly DashCooldownLogView dashCooldownLogView;
 		private readonly BombTargetService bombTargetService;
 		private readonly IMatchNetworkSessionService networkSessionService;
+		private readonly ISteamworksClientService steamworksClientService;
+		private readonly ISteamLobbyService steamLobbyService;
 		private readonly LocalTargetTossPrototype localTargetTossPrototype;
 		private readonly LocalQuickMatchWaitingService localQuickMatchWaitingService;
 		private readonly LocalMatchFlowService localMatchFlowService;
@@ -37,6 +39,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 			DashCooldownLogView dashCooldownLogView,
 			BombTargetService bombTargetService,
 			IMatchNetworkSessionService networkSessionService,
+			ISteamworksClientService steamworksClientService,
+			ISteamLobbyService steamLobbyService,
 			LocalTargetTossPrototype localTargetTossPrototype,
 			LocalQuickMatchWaitingService localQuickMatchWaitingService,
 			LocalMatchFlowService localMatchFlowService,
@@ -52,6 +56,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.dashCooldownLogView = dashCooldownLogView;
 			this.bombTargetService = bombTargetService;
 			this.networkSessionService = networkSessionService;
+			this.steamworksClientService = steamworksClientService;
+			this.steamLobbyService = steamLobbyService;
 			this.localTargetTossPrototype = localTargetTossPrototype;
 			this.localQuickMatchWaitingService = localQuickMatchWaitingService;
 			this.localMatchFlowService = localMatchFlowService;
@@ -78,10 +84,34 @@ namespace BombRunner.Scripts.Gameplay.Match
 		{
 			networkSessionService.InitializeLocalSession();
 
-			var player = playerSpawnService.SpawnLocalPlayer();
-			var dummyPlayers = playerSpawnService.SpawnDummyPlayers();
+			var isSteamLobbyMatch = steamLobbyService != null
+				&& steamLobbyService.IsInLobby
+				&& steamworksClientService != null
+				&& steamworksClientService.IsInitialized;
+			GameObject player;
+			PlayerStateController[] players;
 
-			if (player == null || dummyPlayers == null || dummyPlayers.Length < 2)
+			if (isSteamLobbyMatch)
+			{
+				var playerObjects = playerSpawnService.SpawnSteamLobbyPlayers(
+					steamLobbyService.GetLobbyMemberSteamIds(),
+					steamworksClientService.LocalSteamId);
+				player = FindLocalPlayerObject(playerObjects, steamworksClientService.LocalSteamId);
+				players = GetPlayerStates(playerObjects);
+			}
+			else
+			{
+				player = playerSpawnService.SpawnLocalPlayer();
+				var dummyPlayers = playerSpawnService.SpawnDummyPlayers();
+				players = GetPlayerStates(new[]
+				{
+					player,
+					dummyPlayers[0],
+					dummyPlayers[1]
+				});
+			}
+
+			if (player == null || players == null || players.Length == 0)
 			{
 				return;
 			}
@@ -93,20 +123,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 			{
 				dashCooldownLogView.SetTarget(dashController);
 			}
-
-			if (!player.TryGetComponent<PlayerStateController>(out var playerState)
-				|| !dummyPlayers[0].TryGetComponent<PlayerStateController>(out var dummyStateA)
-				|| !dummyPlayers[1].TryGetComponent<PlayerStateController>(out var dummyStateB))
-			{
-				return;
-			}
-
-			var players = new[]
-			{
-				playerState,
-				dummyStateA,
-				dummyStateB
-			};
 
 			if (sceneFlowService.RequestedMatchMode == MatchMode.LocalQuickMatchWaiting)
 			{
@@ -120,13 +136,67 @@ namespace BombRunner.Scripts.Gameplay.Match
 			}
 
 			bombTargetService.Initialize(players);
+			localWorldFeedbackView.Initialize(players);
+
+			if (isSteamLobbyMatch && !networkSessionService.IsHostAuthority)
+			{
+				Debug.Log("StageManager: Steam client follows Host/Master snapshots.");
+				return;
+			}
+
 			localTargetTossPrototype.Initialize(players);
 			localMatchFlowService.Initialize(players);
 			localPlayerSeparationService.Initialize(players);
 			localDownedObstacleService.Initialize(players);
 			localItemService.Initialize(players);
 			localTauntPrototype.Initialize(players);
-			localWorldFeedbackView.Initialize(players);
+		}
+
+		private GameObject FindLocalPlayerObject(GameObject[] playerObjects, ulong localSteamId)
+		{
+			if (playerObjects == null)
+			{
+				return null;
+			}
+
+			for (var i = 0; i < playerObjects.Length; i++)
+			{
+				var playerObject = playerObjects[i];
+
+				if (playerObject != null
+					&& playerObject.TryGetComponent<PlayerNetworkIdentity>(out var networkIdentity)
+					&& networkIdentity.SteamId == localSteamId)
+				{
+					return playerObject;
+				}
+			}
+
+			return null;
+		}
+
+		private PlayerStateController[] GetPlayerStates(GameObject[] playerObjects)
+		{
+			if (playerObjects == null || playerObjects.Length == 0)
+			{
+				return Array.Empty<PlayerStateController>();
+			}
+
+			var states = new PlayerStateController[playerObjects.Length];
+
+			for (var i = 0; i < playerObjects.Length; i++)
+			{
+				var playerObject = playerObjects[i];
+
+				if (playerObject == null
+					|| !playerObject.TryGetComponent<PlayerStateController>(out var playerState))
+				{
+					return Array.Empty<PlayerStateController>();
+				}
+
+				states[i] = playerState;
+			}
+
+			return states;
 		}
 	}
 }

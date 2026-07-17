@@ -12,8 +12,9 @@
 - `BombTargetService` owns current target state application and target-change notification for the local prototype.
 - `IMatchAuthorityService` is the Host/Master confirmation boundary. `LocalMatchAuthorityService` currently approves immediately for the local prototype.
 - `IMatchNetworkSessionService` is the early multiplayer session boundary. `SteamMatchNetworkSessionService` maps Steam Lobby ownership to Host/Client authority and falls back to `LocalHost` when no Steam lobby exists.
-- `SteamworksClientService` owns Steam API init, callback pumping, and shutdown.
-- `SteamLobbyService` owns Steam quick-match lobby creation, invite overlay, invite join callback, command-line `+connect_lobby` handling, lobby member count, and simple lobby match-state metadata.
+- `SteamworksClientService` currently owns Facepunch Steam client init, callback pumping, and shutdown while keeping the old service name temporarily.
+- `SteamLobbyService` owns Facepunch Steam quick-match lobby creation, invite overlay, command-line `+connect_lobby` handling, lobby member count, and simple lobby match-state metadata.
+- Netcode for GameObjects and Facepunch Transport are installed for the next multiplayer integration step.
 - `LocalMatchFlowService` owns the local bomb spawn countdown, activation, explosion response, respawn loop, and one-survivor match end.
 - `LocalMatchFeedbackView` is an Overlay Canvas bridge View for bomb spawn warning, bomb start countdown, match result display, explosion decision feedback, and tag rejection feedback.
 - `LocalQuickMatchWaitingView` is an Overlay Canvas waiting-room status View. It must be wired to a scene or prefab UI Text instead of creating runtime UI.
@@ -30,7 +31,7 @@
 ## Authority Rules
 - Host/Master confirms target changes, tag immunity, bomb phase randomization, explosion victim, downed state, taunt effects, item pickup/throw/hit, and status effects.
 - Current local authority confirms random next-target selection, bomb phase duration randomization, explosion victim selection, downed-state application, item pickup/throw/hit, target transfer, and taunt-risk target changes.
-- Steam Lobby currently coordinates friend testing only up to lobby/waiting/countdown flow. Real-time gameplay synchronization still requires a later Netcode/transport integration.
+- Steam Lobby currently coordinates friend testing only up to lobby/waiting/countdown flow. Real-time gameplay synchronization should move through Netcode for GameObjects with Facepunch Transport.
 - Clients send input and play local presentation, then reconcile to authoritative results.
 - Local prototype code may simulate Host/Master authority, but comments should state the future authority boundary.
 

@@ -16,6 +16,8 @@ namespace BombRunner.Scripts.Multiplayer
 		int MaxMembers { get; }
 		string MatchState { get; }
 
+		ulong GetLobbyOwnerSteamId();
+		ulong[] GetLobbyMemberSteamIds();
 		UniTask<bool> CreateQuickMatchLobbyAsync(int maxMembers, CancellationToken cancellationToken);
 		UniTask<bool> JoinLobbyAsync(ulong lobbyId, CancellationToken cancellationToken);
 		void LeaveLobby();
