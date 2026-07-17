@@ -1,4 +1,5 @@
 using BombRunner.Scripts.Localization;
+using BombRunner.Scripts.Multiplayer;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -38,6 +39,8 @@ namespace BombRunner.Scripts.App
 			builder.Register<SoundManager>(Lifetime.Singleton);
 			builder.Register<UiManager>(Lifetime.Singleton);
 			builder.Register<LocalizationService>(Lifetime.Singleton);
+			builder.RegisterEntryPoint<SteamworksClientService>(Lifetime.Singleton);
+			builder.RegisterEntryPoint<SteamLobbyService>(Lifetime.Singleton);
 
 			// Init 씬에 배치된 GameBootstrap에 서비스 주입.
 			builder.RegisterComponentInHierarchy<GameBootstrap>();

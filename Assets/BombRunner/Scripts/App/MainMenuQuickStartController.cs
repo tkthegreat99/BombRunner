@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using BombRunner.Scripts.Multiplayer;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,14 +12,37 @@ namespace BombRunner.Scripts.App
 	public sealed class MainMenuQuickStartController : MonoBehaviour
 	{
 		private SceneFlowService sceneFlowService;
+		private ISteamLobbyService steamLobbyService;
+		private GameSettings gameSettings;
 		private bool isLoading;
 		private bool hasSceneFlowService;
+		private bool isSteamLobbySubscribed;
 
 		[Inject]
-		public void Construct(SceneFlowService sceneFlowService)
+		public void Construct(
+			SceneFlowService sceneFlowService,
+			ISteamLobbyService steamLobbyService,
+			GameSettings gameSettings)
 		{
 			this.sceneFlowService = sceneFlowService;
+			this.steamLobbyService = steamLobbyService;
+			this.gameSettings = gameSettings;
 			hasSceneFlowService = true;
+			SubscribeSteamLobbyChanged();
+		}
+
+		private void OnEnable()
+		{
+			SubscribeSteamLobbyChanged();
+		}
+
+		private void OnDisable()
+		{
+			if (steamLobbyService != null && isSteamLobbySubscribed)
+			{
+				steamLobbyService.Changed -= OnSteamLobbyChanged;
+				isSteamLobbySubscribed = false;
+			}
 		}
 
 		private void Awake()
@@ -48,24 +72,27 @@ namespace BombRunner.Scripts.App
 				return;
 			}
 
-			if (!WasStartRequested())
+			if (!WasStartRequested(out var forceLocalFallback))
 			{
 				return;
 			}
 
-			LoadQuickMatchWaitingAsync(this.GetCancellationTokenOnDestroy()).Forget();
+			LoadQuickMatchWaitingAsync(forceLocalFallback, this.GetCancellationTokenOnDestroy()).Forget();
 		}
 
-		private bool WasStartRequested()
+		private bool WasStartRequested(out bool forceLocalFallback)
 		{
 			var keyboard = Keyboard.current;
+			forceLocalFallback = keyboard.gKey.wasPressedThisFrame;
 			return keyboard.enterKey.wasPressedThisFrame
 				|| keyboard.spaceKey.wasPressedThisFrame
-				|| keyboard.gKey.wasPressedThisFrame;
+				|| forceLocalFallback;
 		}
 
 		// 임시 MainMenu 진입 경로. Steam Lobby 전까지 로컬 대기장 모드를 요청.
-		private async UniTaskVoid LoadQuickMatchWaitingAsync(CancellationToken cancellationToken)
+		private async UniTaskVoid LoadQuickMatchWaitingAsync(
+			bool forceLocalFallback,
+			CancellationToken cancellationToken)
 		{
 			if (sceneFlowService == null)
 			{
@@ -77,6 +104,31 @@ namespace BombRunner.Scripts.App
 
 			try
 			{
+				if (!forceLocalFallback)
+				{
+					if (steamLobbyService == null || !steamLobbyService.IsAvailable)
+					{
+						Debug.LogWarning("Steam lobby quick match unavailable. Press G for local fallback.");
+						isLoading = false;
+						return;
+					}
+
+					if (!steamLobbyService.IsInLobby)
+					{
+						var maxMembers = gameSettings != null ? gameSettings.QuickMatchMaxParticipants : 8;
+						var created = await steamLobbyService.CreateQuickMatchLobbyAsync(maxMembers, cancellationToken);
+
+						if (!created)
+						{
+							Debug.LogWarning("Steam lobby creation failed. Press G for local fallback.");
+							isLoading = false;
+							return;
+						}
+
+						steamLobbyService.OpenInviteDialog();
+					}
+				}
+
 				await sceneFlowService.LoadLocalQuickMatchWaitingAsync(cancellationToken);
 			}
 			catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -87,6 +139,28 @@ namespace BombRunner.Scripts.App
 				Debug.LogException(exception);
 				isLoading = false;
 			}
+		}
+
+		private void OnSteamLobbyChanged()
+		{
+			if (isLoading || steamLobbyService == null || !steamLobbyService.IsInLobby)
+			{
+				return;
+			}
+
+			LoadQuickMatchWaitingAsync(false, this.GetCancellationTokenOnDestroy()).Forget();
+		}
+
+		private void SubscribeSteamLobbyChanged()
+		{
+			if (!isActiveAndEnabled || steamLobbyService == null || isSteamLobbySubscribed)
+			{
+				return;
+			}
+
+			steamLobbyService.Changed += OnSteamLobbyChanged;
+			isSteamLobbySubscribed = true;
+			OnSteamLobbyChanged();
 		}
 	}
 }

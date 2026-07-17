@@ -3,6 +3,7 @@
     "references": [
         "UniTask",
         "VContainer",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "com.rlabrecque.steamworks.net"
     ]
 }

@@ -18,7 +18,8 @@
 - Local Taunt prototype exists: hold input creates a dash-lock area, disables the taunter's movement/dash, and can pull bomb target risk onto the taunter when held near the bomb.
 - Local prototype item core exists: players can pick up one item, throw it to a limited range, apply Slow or Stun on hit, and resolve hit behavior per item type.
 - Local authority now routes item pickup/throw/hit, target transfer, taunt-risk target changes, explosion victim/downed application, next target selection, and bomb phase duration randomization through `IMatchAuthorityService`.
-- Early multiplayer session scaffolding exists through `IMatchNetworkSessionService`; the current implementation is `LocalMatchNetworkSessionService` and behaves as local Host authority without Netcode package installation.
+- Early multiplayer session scaffolding exists through `IMatchNetworkSessionService`; the current implementation maps Steam Lobby ownership through `SteamMatchNetworkSessionService` and falls back to local Host authority without a lobby.
+- Steamworks.NET is installed and Steam Lobby smoke-test support exists for creating a friends-only lobby, opening the Steam invite overlay, accepting invite joins, reading lobby member count, and propagating waiting/countdown/starting metadata.
 - `Game` scene now contains scene-placed bridge Views for quick-match waiting status, match feedback, world feedback, and bomb-spawn camera focus.
 - `GameLifetimeScope` no longer creates `LocalMatchFeedbackView`, `LocalQuickMatchWaitingView`, or bomb-spawn camera focus objects at runtime; missing View wiring is treated as a scene setup error.
 - Localization foundation is in place through `LocalizationService` plus `Assets/BombRunner/Resources/Localization/en.json` and `ko.json`.
@@ -57,7 +58,7 @@
    - Alive/downed separation radius, strength, and downed push weight.
    - Taunt radius, bomb-risk hold time, and bomb-risk distance.
 6. Keep local authority behavior Host/Master-shaped even before networking is selected.
-7. Keep the current multiplayer layer package-free until the concrete Netcode integration path is chosen.
+7. Keep the current multiplayer layer Netcode-free until Steam Lobby smoke tests pass and the concrete transport path is chosen.
 
 ## Next
 1. Run a Unity Editor smoke test for the full local quick-match loop and record any scene/prefab wiring issues.
@@ -82,5 +83,5 @@
    - Later, EditMode/PlayMode tests around target selection, explosion victim selection, and state transitions.
 6. Start real networking behind the existing seams:
    - Choose the concrete Unity multiplayer stack and package version.
-   - Replace `LocalMatchNetworkSessionService` with a Netcode-backed session implementation.
+   - Add Netcode for GameObjects and a Steam transport after Steam Lobby smoke tests pass.
    - Add request/confirm RPCs only after scene/prefab ownership and player identity mapping are defined.

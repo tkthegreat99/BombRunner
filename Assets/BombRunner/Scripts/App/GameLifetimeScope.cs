@@ -51,6 +51,8 @@ namespace BombRunner.Scripts.App
 				builder.Register<SceneLoader>(Lifetime.Scoped);
 				builder.Register<SceneFlowService>(Lifetime.Scoped);
 				builder.Register<LocalizationService>(Lifetime.Scoped);
+				builder.RegisterEntryPoint<SteamworksClientService>(Lifetime.Scoped);
+				builder.RegisterEntryPoint<SteamLobbyService>(Lifetime.Scoped);
 			}
 
 			var activeInputReader = playerInputReader;
@@ -157,7 +159,7 @@ namespace BombRunner.Scripts.App
 			builder.RegisterInstance(activeBombSpawnSettings);
 			builder.RegisterInstance(activeBalanceSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
-			builder.Register<IMatchNetworkSessionService, LocalMatchNetworkSessionService>(Lifetime.Scoped);
+			builder.Register<IMatchNetworkSessionService, SteamMatchNetworkSessionService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
 			builder.Register<BombState>(Lifetime.Scoped);
 			builder.Register<BombTargetService>(Lifetime.Scoped);
