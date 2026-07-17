@@ -3,6 +3,7 @@ using System.Threading;
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Authority;
 using BombRunner.Scripts.Gameplay.Player;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 	public sealed class LocalMatchFlowService : IDisposable
 	{
 		private readonly BombSpawnService bombSpawnService;
-		private readonly BombTargetService bombTargetService;
+		private readonly IMatchAuthorityService matchAuthorityService;
 		private readonly GameBalanceSettings balanceSettings;
 		private readonly LocalPlayerCameraFollow cameraFollow;
 		private readonly LocalMatchFeedbackView matchFeedbackView;
@@ -25,14 +26,14 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		public LocalMatchFlowService(
 			BombSpawnService bombSpawnService,
-			BombTargetService bombTargetService,
+			IMatchAuthorityService matchAuthorityService,
 			GameBalanceSettings balanceSettings,
 			LocalPlayerCameraFollow cameraFollow,
 			LocalMatchFeedbackView matchFeedbackView,
 			LocalBombSpawnCameraFocusView bombSpawnCameraFocusView)
 		{
 			this.bombSpawnService = bombSpawnService;
-			this.bombTargetService = bombTargetService;
+			this.matchAuthorityService = matchAuthorityService;
 			this.balanceSettings = balanceSettings;
 			this.cameraFollow = cameraFollow;
 			this.matchFeedbackView = matchFeedbackView;
@@ -51,7 +52,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 				return;
 			}
 
-			bombTargetService.TrySetAnyAliveTarget(null);
+			matchAuthorityService.TrySetAnyAliveBombTarget(players, null);
 			RunBombSpawnSequenceAsync(null, cancellationTokenSource.Token).Forget();
 		}
 
@@ -83,7 +84,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 				return;
 			}
 
-			bombTargetService.TrySetAnyAliveTarget(downedPlayer);
+			matchAuthorityService.TrySetAnyAliveBombTarget(players, downedPlayer);
 			RunBombSpawnSequenceAsync(controller, cancellationTokenSource.Token).Forget();
 		}
 
@@ -277,7 +278,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			isMatchEnded = true;
 			SetPlayersInputEnabled(false);
 			bombSpawnService.DespawnLocalBomb(controller);
-			bombTargetService.ClearTarget();
+			matchAuthorityService.ClearBombTarget();
 			cameraFollow.SetTarget(GetCameraReturnTarget(), true);
 
 			var winner = GetWinner();

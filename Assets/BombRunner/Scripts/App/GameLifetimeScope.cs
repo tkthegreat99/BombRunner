@@ -1,11 +1,13 @@
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Authority;
 using BombRunner.Scripts.Gameplay.Items;
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
 using BombRunner.Scripts.Localization;
+using BombRunner.Scripts.Multiplayer;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -155,9 +157,11 @@ namespace BombRunner.Scripts.App
 			builder.RegisterInstance(activeBombSpawnSettings);
 			builder.RegisterInstance(activeBalanceSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
+			builder.Register<IMatchNetworkSessionService, LocalMatchNetworkSessionService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
 			builder.Register<BombState>(Lifetime.Scoped);
 			builder.Register<BombTargetService>(Lifetime.Scoped);
+			builder.Register<IMatchAuthorityService, LocalMatchAuthorityService>(Lifetime.Scoped);
 			builder.Register<BombSpawnService>(Lifetime.Scoped);
 			builder.Register<LocalQuickMatchWaitingService>(Lifetime.Scoped);
 			builder.Register<LocalMatchFlowService>(Lifetime.Scoped);

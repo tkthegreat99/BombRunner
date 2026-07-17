@@ -1,5 +1,6 @@
 using System;
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Authority;
 using BombRunner.Scripts.Gameplay.Player;
 using UnityEngine;
 
@@ -17,6 +18,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private BombState bombState;
 		private BombTargetService bombTargetService;
+		private IMatchAuthorityService matchAuthorityService;
 		private GameBalanceSettings balanceSettings;
 		private PlayerStateController[] players;
 		private Vector3 velocity;
@@ -35,11 +37,13 @@ namespace BombRunner.Scripts.Bomb
 		public void Initialize(
 			BombState bombState,
 			BombTargetService bombTargetService,
+			IMatchAuthorityService matchAuthorityService,
 			GameBalanceSettings balanceSettings,
 			PlayerStateController[] players)
 		{
 			this.bombState = bombState;
 			this.bombTargetService = bombTargetService;
+			this.matchAuthorityService = matchAuthorityService;
 			this.balanceSettings = balanceSettings;
 			this.players = players;
 			velocity = Vector3.zero;
@@ -52,6 +56,7 @@ namespace BombRunner.Scripts.Bomb
 			hasExploded = false;
 			isInitialized = bombState != null
 				&& bombTargetService != null
+				&& matchAuthorityService != null
 				&& balanceSettings != null
 				&& players != null
 				&& players.Length > 0;
@@ -126,46 +131,9 @@ namespace BombRunner.Scripts.Bomb
 		private void SetTimerPhase(BombTimerPhase timerPhase)
 		{
 			bombState.SetTimerPhase(timerPhase);
-			phaseRemainingTime = GetRandomPhaseDuration(timerPhase);
-			bombState.SetMoveSpeed(GetPhaseMoveSpeed(timerPhase));
+			phaseRemainingTime = matchAuthorityService.ResolveBombPhaseDuration(timerPhase);
+			bombState.SetMoveSpeed(balanceSettings.GetMoveSpeed(timerPhase));
 			Debug.Log($"Bomb timer phase: {timerPhase}, duration: {phaseRemainingTime:0.00}s");
-		}
-
-		private float GetRandomPhaseDuration(BombTimerPhase timerPhase)
-		{
-			switch (timerPhase)
-			{
-				case BombTimerPhase.Calm:
-					return GetRandomRangeValue(balanceSettings.CalmDurationRange);
-				case BombTimerPhase.Warning:
-					return GetRandomRangeValue(balanceSettings.WarningDurationRange);
-				case BombTimerPhase.Overdrive:
-					return GetRandomRangeValue(balanceSettings.OverdriveDurationRange);
-				default:
-					return 0f;
-			}
-		}
-
-		private float GetRandomRangeValue(Vector2 range)
-		{
-			var min = Mathf.Min(range.x, range.y);
-			var max = Mathf.Max(range.x, range.y);
-			return UnityEngine.Random.Range(min, max);
-		}
-
-		private float GetPhaseMoveSpeed(BombTimerPhase timerPhase)
-		{
-			switch (timerPhase)
-			{
-				case BombTimerPhase.Calm:
-					return balanceSettings.CalmMoveSpeed;
-				case BombTimerPhase.Warning:
-					return balanceSettings.WarningMoveSpeed;
-				case BombTimerPhase.Overdrive:
-					return balanceSettings.OverdriveMoveSpeed;
-				default:
-					return balanceSettings.CalmMoveSpeed;
-			}
 		}
 
 		private void Explode()
@@ -289,7 +257,10 @@ namespace BombRunner.Scripts.Bomb
 
 		private PlayerStateController ResolveClosestPlayerDown()
 		{
-			var closestPlayer = FindClosestAlivePlayerInExplosionRadius();
+			var closestPlayer = matchAuthorityService.ResolveExplosionVictim(
+				transform.position,
+				players,
+				bombState.ExplosionRadius);
 
 			if (closestPlayer == null)
 			{
@@ -297,49 +268,13 @@ namespace BombRunner.Scripts.Bomb
 				return null;
 			}
 
-			closestPlayer.SetDowned();
+			if (!matchAuthorityService.SetPlayerDowned(closestPlayer))
+			{
+				return null;
+			}
+
 			Debug.Log($"Bomb exploded: {closestPlayer.PlayerLabel} downed as closest alive player");
 			return closestPlayer;
-		}
-
-		private PlayerStateController FindClosestAlivePlayerInExplosionRadius()
-		{
-			var center = transform.position;
-			var radiusSqr = bombState.ExplosionRadius * bombState.ExplosionRadius;
-			var closestPlayer = default(PlayerStateController);
-			var closestDistanceSqr = float.MaxValue;
-
-			for (var i = 0; i < players.Length; i++)
-			{
-				TrySelectClosestPlayer(players[i], center, radiusSqr, ref closestPlayer, ref closestDistanceSqr);
-			}
-
-			return closestPlayer;
-		}
-
-		private void TrySelectClosestPlayer(
-			PlayerStateController player,
-			Vector3 center,
-			float radiusSqr,
-			ref PlayerStateController closestPlayer,
-			ref float closestDistanceSqr)
-		{
-			if (player == null || !player.IsAlive)
-			{
-				return;
-			}
-
-			var offset = player.transform.position - center;
-			offset.y = 0f;
-			var distanceSqr = offset.sqrMagnitude;
-
-			if (distanceSqr > radiusSqr || distanceSqr >= closestDistanceSqr)
-			{
-				return;
-			}
-
-			closestDistanceSqr = distanceSqr;
-			closestPlayer = player;
 		}
 
 	}

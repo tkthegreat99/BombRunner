@@ -1,4 +1,5 @@
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Authority;
 using BombRunner.Scripts.Gameplay.Player;
 using UnityEngine;
 using VContainer;
@@ -13,6 +14,7 @@ namespace BombRunner.Scripts.Bomb
 		private readonly GameBalanceSettings balanceSettings;
 		private readonly BombState bombState;
 		private readonly BombTargetService bombTargetService;
+		private readonly IMatchAuthorityService matchAuthorityService;
 		private GameObject bombInstance;
 
 		public BombCreatureController CurrentController =>
@@ -25,13 +27,15 @@ namespace BombRunner.Scripts.Bomb
 			BombSpawnSettings bombSpawnSettings,
 			GameBalanceSettings balanceSettings,
 			BombState bombState,
-			BombTargetService bombTargetService)
+			BombTargetService bombTargetService,
+			IMatchAuthorityService matchAuthorityService)
 		{
 			this.objectResolver = objectResolver;
 			this.bombSpawnSettings = bombSpawnSettings;
 			this.balanceSettings = balanceSettings;
 			this.bombState = bombState;
 			this.bombTargetService = bombTargetService;
+			this.matchAuthorityService = matchAuthorityService;
 		}
 
 		public BombCreatureController SpawnLocalBomb(PlayerStateController[] players)
@@ -66,7 +70,7 @@ namespace BombRunner.Scripts.Bomb
 				return null;
 			}
 
-			controller.Initialize(bombState, bombTargetService, balanceSettings, players);
+			controller.Initialize(bombState, bombTargetService, matchAuthorityService, balanceSettings, players);
 			return controller;
 		}
 

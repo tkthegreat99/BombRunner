@@ -5,6 +5,7 @@ using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Gameplay.Items;
 using BombRunner.Scripts.Gameplay.Player;
+using BombRunner.Scripts.Multiplayer;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VContainer.Unity;
@@ -18,6 +19,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly LocalPlayerCameraFollow cameraFollow;
 		private readonly DashCooldownLogView dashCooldownLogView;
 		private readonly BombTargetService bombTargetService;
+		private readonly IMatchNetworkSessionService networkSessionService;
 		private readonly LocalTargetTossPrototype localTargetTossPrototype;
 		private readonly LocalQuickMatchWaitingService localQuickMatchWaitingService;
 		private readonly LocalMatchFlowService localMatchFlowService;
@@ -34,6 +36,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			LocalPlayerCameraFollow cameraFollow,
 			DashCooldownLogView dashCooldownLogView,
 			BombTargetService bombTargetService,
+			IMatchNetworkSessionService networkSessionService,
 			LocalTargetTossPrototype localTargetTossPrototype,
 			LocalQuickMatchWaitingService localQuickMatchWaitingService,
 			LocalMatchFlowService localMatchFlowService,
@@ -48,6 +51,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.cameraFollow = cameraFollow;
 			this.dashCooldownLogView = dashCooldownLogView;
 			this.bombTargetService = bombTargetService;
+			this.networkSessionService = networkSessionService;
 			this.localTargetTossPrototype = localTargetTossPrototype;
 			this.localQuickMatchWaitingService = localQuickMatchWaitingService;
 			this.localMatchFlowService = localMatchFlowService;
@@ -72,6 +76,8 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private async UniTaskVoid RunStageAsync(CancellationToken cancellationToken)
 		{
+			networkSessionService.InitializeLocalSession();
+
 			var player = playerSpawnService.SpawnLocalPlayer();
 			var dummyPlayers = playerSpawnService.SpawnDummyPlayers();
 

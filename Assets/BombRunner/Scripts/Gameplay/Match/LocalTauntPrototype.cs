@@ -1,5 +1,6 @@
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Authority;
 using BombRunner.Scripts.Gameplay.Player;
 using UnityEngine;
 using VContainer.Unity;
@@ -10,6 +11,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 	{
 		private readonly BombSpawnService bombSpawnService;
 		private readonly BombTargetService bombTargetService;
+		private readonly IMatchAuthorityService matchAuthorityService;
 		private readonly GameBalanceSettings balanceSettings;
 		private PlayerStateController[] players;
 		private float[] tauntHoldTimes;
@@ -19,10 +21,12 @@ namespace BombRunner.Scripts.Gameplay.Match
 		public LocalTauntPrototype(
 			BombSpawnService bombSpawnService,
 			BombTargetService bombTargetService,
+			IMatchAuthorityService matchAuthorityService,
 			GameBalanceSettings balanceSettings)
 		{
 			this.bombSpawnService = bombSpawnService;
 			this.bombTargetService = bombTargetService;
+			this.matchAuthorityService = matchAuthorityService;
 			this.balanceSettings = balanceSettings;
 		}
 
@@ -127,8 +131,11 @@ namespace BombRunner.Scripts.Gameplay.Match
 			}
 
 			bombRiskTriggered[taunterIndex] = true;
-			bombTargetService.TrySetTarget(taunter);
-			Debug.Log($"Taunt risk: bomb target changed to {taunter.PlayerLabel}");
+
+			if (matchAuthorityService.ApplyTauntRisk(taunter))
+			{
+				Debug.Log($"Taunt risk: bomb target changed to {taunter.PlayerLabel}");
+			}
 		}
 	}
 }

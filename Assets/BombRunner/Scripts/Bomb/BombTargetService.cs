@@ -24,13 +24,6 @@ namespace BombRunner.Scripts.Bomb
 		{
 			this.players = players;
 			isInitialized = players != null && players.Length > 0;
-
-			if (!isInitialized)
-			{
-				return;
-			}
-
-			TrySetAnyAliveTarget(null);
 		}
 
 		public bool TrySetTarget(PlayerStateController targetPlayer)
@@ -58,45 +51,6 @@ namespace BombRunner.Scripts.Bomb
 			return true;
 		}
 
-		public bool TrySetAnyAliveTarget(PlayerStateController excludedPlayer)
-		{
-			if (!isInitialized)
-			{
-				return false;
-			}
-
-			var candidateCount = CountAliveCandidates(excludedPlayer);
-
-			if (candidateCount <= 0)
-			{
-				ClearTarget();
-				return false;
-			}
-
-			var selectedIndex = UnityEngine.Random.Range(0, candidateCount);
-			var currentIndex = 0;
-
-			for (var i = 0; i < players.Length; i++)
-			{
-				var player = players[i];
-
-				if (player == null || player == excludedPlayer || !player.IsAlive)
-				{
-					continue;
-				}
-
-				if (currentIndex == selectedIndex)
-				{
-					return TrySetTarget(player);
-				}
-
-				currentIndex++;
-			}
-
-			ClearTarget();
-			return false;
-		}
-
 		public void ClearTarget()
 		{
 			if (!isInitialized)
@@ -121,25 +75,6 @@ namespace BombRunner.Scripts.Bomb
 			}
 
 			return false;
-		}
-
-		private int CountAliveCandidates(PlayerStateController excludedPlayer)
-		{
-			var candidateCount = 0;
-
-			for (var i = 0; i < players.Length; i++)
-			{
-				var player = players[i];
-
-				if (player == null || player == excludedPlayer || !player.IsAlive)
-				{
-					continue;
-				}
-
-				candidateCount++;
-			}
-
-			return candidateCount;
 		}
 
 		private void ApplyTargetFlags(PlayerStateController targetPlayer)

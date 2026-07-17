@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Authority;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
 using UnityEngine;
@@ -41,6 +42,7 @@ namespace BombRunner.Scripts.Gameplay.Items
 
 		private readonly IInputService inputService;
 		private readonly GameBalanceSettings balanceSettings;
+		private readonly IMatchAuthorityService matchAuthorityService;
 		private readonly List<PickupState> pickups = new();
 		private readonly List<ProjectileState> projectiles = new();
 		private PlayerStateController[] players;
@@ -48,10 +50,14 @@ namespace BombRunner.Scripts.Gameplay.Items
 		private PlayerItemHolder[] itemHolders;
 		private bool isInitialized;
 
-		public LocalItemService(IInputService inputService, GameBalanceSettings balanceSettings)
+		public LocalItemService(
+			IInputService inputService,
+			GameBalanceSettings balanceSettings,
+			IMatchAuthorityService matchAuthorityService)
 		{
 			this.inputService = inputService;
 			this.balanceSettings = balanceSettings;
+			this.matchAuthorityService = matchAuthorityService;
 		}
 
 		public void Initialize(PlayerStateController[] players)
@@ -185,7 +191,7 @@ namespace BombRunner.Scripts.Gameplay.Items
 						continue;
 					}
 
-					if (!holder.TryPickup(pickup.ItemType))
+					if (!matchAuthorityService.TryPickupItem(player, holder, pickup.ItemType))
 					{
 						continue;
 					}
@@ -215,7 +221,9 @@ namespace BombRunner.Scripts.Gameplay.Items
 				return;
 			}
 
-			if (!localHolder.TryConsume(out var itemType))
+			var itemType = localHolder.HeldItem;
+
+			if (itemType == ItemType.None)
 			{
 				return;
 			}
@@ -234,7 +242,14 @@ namespace BombRunner.Scripts.Gameplay.Items
 				direction = Vector3.forward;
 			}
 
-			SpawnProjectile(localPlayer, itemType, direction.normalized);
+			direction.Normalize();
+
+			if (!matchAuthorityService.TryThrowItem(localPlayer, itemType, direction))
+			{
+				return;
+			}
+
+			SpawnProjectile(localPlayer, itemType, direction);
 		}
 
 		private void SpawnProjectile(PlayerStateController owner, ItemType itemType, Vector3 direction)
@@ -346,39 +361,16 @@ namespace BombRunner.Scripts.Gameplay.Items
 					continue;
 				}
 
-				ApplyItemEffect(projectile.ItemType, player, movementControllers[i]);
+				if (!matchAuthorityService.ApplyItemHit(projectile.ItemType, player))
+				{
+					continue;
+				}
+
 				Debug.Log($"Item hit: {projectile.ItemType} hit {player.PlayerLabel}");
 				return GetHitBehavior(projectile.ItemType);
 			}
 
 			return null;
-		}
-
-		private void ApplyItemEffect(
-			ItemType itemType,
-			PlayerStateController target,
-			PlayerMovementController movementController)
-		{
-			// 아이템 타입별 피격 효과 적용.
-			if (target == null || !target.IsAlive)
-			{
-				return;
-			}
-
-			switch (itemType)
-			{
-				case ItemType.Slow:
-					if (movementController != null)
-					{
-						movementController.ApplyTemporarySlow(
-							balanceSettings.SlowItemDurationSeconds,
-							balanceSettings.SlowItemSpeedMultiplier);
-					}
-					break;
-				case ItemType.Stun:
-					target.SetStunned(true, balanceSettings.StunItemDurationSeconds);
-					break;
-			}
 		}
 
 		private float GetProjectileRange(ItemType itemType)

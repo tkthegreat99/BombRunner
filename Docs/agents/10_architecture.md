@@ -9,7 +9,9 @@
 - `LocalQuickMatchWaitingService` simulates a Host-owned waiting-room participant fill and countdown before the local match loop starts.
 - `PlayerSpawnService` spawns local and dummy players.
 - `BombSpawnService` spawns a local prototype bomb.
-- `BombTargetService` owns the current target state for the local prototype.
+- `BombTargetService` owns current target state application and target-change notification for the local prototype.
+- `IMatchAuthorityService` is the Host/Master confirmation boundary. `LocalMatchAuthorityService` currently approves immediately for the local prototype.
+- `IMatchNetworkSessionService` is the early multiplayer session boundary. `LocalMatchNetworkSessionService` currently treats local play as `LocalHost` authority without adding a Netcode package.
 - `LocalMatchFlowService` owns the local bomb spawn countdown, activation, explosion response, respawn loop, and one-survivor match end.
 - `LocalMatchFeedbackView` is an Overlay Canvas bridge View for bomb spawn warning, bomb start countdown, match result display, explosion decision feedback, and tag rejection feedback.
 - `LocalQuickMatchWaitingView` is an Overlay Canvas waiting-room status View. It must be wired to a scene or prefab UI Text instead of creating runtime UI.
@@ -25,6 +27,7 @@
 
 ## Authority Rules
 - Host/Master confirms target changes, tag immunity, bomb phase randomization, explosion victim, downed state, taunt effects, item pickup/throw/hit, and status effects.
+- Current local authority confirms random next-target selection, bomb phase duration randomization, explosion victim selection, downed-state application, item pickup/throw/hit, target transfer, and taunt-risk target changes.
 - Clients send input and play local presentation, then reconcile to authoritative results.
 - Local prototype code may simulate Host/Master authority, but comments should state the future authority boundary.
 
