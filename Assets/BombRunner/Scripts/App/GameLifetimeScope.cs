@@ -1,6 +1,7 @@
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
 using BombRunner.Scripts.Data;
+using BombRunner.Scripts.Gameplay.Items;
 using BombRunner.Scripts.Gameplay.Match;
 using BombRunner.Scripts.Gameplay.Player;
 using BombRunner.Scripts.Input;
@@ -162,6 +163,7 @@ namespace BombRunner.Scripts.App
 			builder.Register<LocalMatchFlowService>(Lifetime.Scoped);
 			builder.Register<LocalPlayerSeparationService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalDownedObstacleService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
+			builder.Register<LocalItemService>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalTargetTossPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.Register<LocalTauntPrototype>(Lifetime.Scoped).AsSelf().AsImplementedInterfaces();
 			builder.RegisterEntryPoint<StageManager>(Lifetime.Scoped);

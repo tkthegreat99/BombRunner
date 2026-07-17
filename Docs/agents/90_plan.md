@@ -16,6 +16,7 @@
 - The local match ends when one survivor remains.
 - Tag transfer and 3-second tag immunity are implemented.
 - Local Taunt prototype exists: hold input creates a dash-lock area, disables the taunter's movement/dash, and can pull bomb target risk onto the taunter when held near the bomb.
+- Local prototype item core exists: players can pick up one item, throw it to a limited range, apply Slow or Stun on hit, and resolve hit behavior per item type.
 - `Game` scene now contains scene-placed bridge Views for quick-match waiting status, match feedback, world feedback, and bomb-spawn camera focus.
 - `GameLifetimeScope` no longer creates `LocalMatchFeedbackView`, `LocalQuickMatchWaitingView`, or bomb-spawn camera focus objects at runtime; missing View wiring is treated as a scene setup error.
 - Localization foundation is in place through `LocalizationService` plus `Assets/BombRunner/Resources/Localization/en.json` and `ko.json`.
@@ -57,11 +58,12 @@
 
 ## Next
 1. Run a Unity Editor smoke test for the full local quick-match loop and record any scene/prefab wiring issues.
-2. Strengthen downed-player obstacle play:
-   - Low/downed collider profile or dedicated stomp area.
-   - Downed animation/crawl presentation.
-   - Survivor stumble or shove feedback when stepping on downed players.
-   - Bomb temporary acceleration when crossing a downed player.
+2. Expand item play from the local Slow-item prototype:
+   - Move temporary primitive pickup/projectile visuals into prefabs when art direction is ready.
+   - Add item spawn timing, respawn rules, and map spawn points.
+   - Add more throw item effects such as knockback, puddle, banana peel, or bumper.
+   - Add more hit behaviors such as consume, drop, pierce, bounce, or split.
+   - Split Host/Master item pickup, throw, collision, and effect confirmation into network-ready boundaries.
 3. Expand Taunt from prototype to proper gameplay module:
    - Data asset or settings section for taunt balance.
    - Area visualization.

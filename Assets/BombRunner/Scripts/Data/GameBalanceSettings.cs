@@ -41,6 +41,17 @@ namespace BombRunner.Scripts.Data
 		[SerializeField] private float tauntRadius = 2.2f;
 		[SerializeField] private float tauntBombRiskHoldSeconds = 1.25f;
 		[SerializeField] private float tauntBombRiskDistance = 5f;
+		// 아이템 프로토타입 밸런스 값.
+		[SerializeField] private float itemPickupRadius = 1.1f;
+		[SerializeField] private float itemProjectileSpeed = 9f;
+		[SerializeField] private float itemProjectileRange = 8f;
+		[SerializeField] private float itemProjectileGravity = 18f;
+		[SerializeField] private float itemPickupHeight = 0.35f;
+		[SerializeField] private float itemProjectileHitRadius = 0.65f;
+		[SerializeField] private float itemProjectileOwnerIgnoreSeconds = 0.2f;
+		[SerializeField] private float slowItemDurationSeconds = 1.8f;
+		[SerializeField] private float slowItemSpeedMultiplier = 0.45f;
+		[SerializeField] private float stunItemDurationSeconds = 0.85f;
 
 		public float TagDistance => Mathf.Max(0f, tagDistance);
 		public float TagDistanceSqr => TagDistance * TagDistance;
@@ -82,6 +93,18 @@ namespace BombRunner.Scripts.Data
 		public float TauntBombRiskHoldSeconds => Mathf.Max(0f, tauntBombRiskHoldSeconds);
 		public float TauntBombRiskDistance => Mathf.Max(0f, tauntBombRiskDistance);
 		public float TauntBombRiskDistanceSqr => TauntBombRiskDistance * TauntBombRiskDistance;
+		public float ItemPickupRadius => Mathf.Max(0f, itemPickupRadius);
+		public float ItemPickupRadiusSqr => ItemPickupRadius * ItemPickupRadius;
+		public float ItemProjectileSpeed => Mathf.Max(0f, itemProjectileSpeed);
+		public float ItemProjectileRange => Mathf.Max(0f, itemProjectileRange);
+		public float ItemProjectileGravity => Mathf.Max(0.01f, itemProjectileGravity);
+		public float ItemPickupHeight => Mathf.Max(0f, itemPickupHeight);
+		public float ItemProjectileHitRadius => Mathf.Max(0f, itemProjectileHitRadius);
+		public float ItemProjectileHitRadiusSqr => ItemProjectileHitRadius * ItemProjectileHitRadius;
+		public float ItemProjectileOwnerIgnoreSeconds => Mathf.Max(0f, itemProjectileOwnerIgnoreSeconds);
+		public float SlowItemDurationSeconds => Mathf.Max(0f, slowItemDurationSeconds);
+		public float SlowItemSpeedMultiplier => Mathf.Clamp01(slowItemSpeedMultiplier);
+		public float StunItemDurationSeconds => Mathf.Max(0f, stunItemDurationSeconds);
 
 		public Vector2 GetDurationRange(BombTimerPhase timerPhase)
 		{

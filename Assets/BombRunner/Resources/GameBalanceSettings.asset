@@ -36,3 +36,13 @@ MonoBehaviour:
   tauntRadius: 2.2
   tauntBombRiskHoldSeconds: 1.25
   tauntBombRiskDistance: 5
+  itemPickupRadius: 1.1
+  itemProjectileSpeed: 9
+  itemProjectileRange: 8
+  itemProjectileGravity: 18
+  itemPickupHeight: 0.35
+  itemProjectileHitRadius: 0.65
+  itemProjectileOwnerIgnoreSeconds: 0.2
+  slowItemDurationSeconds: 1.8
+  slowItemSpeedMultiplier: 0.45
+  stunItemDurationSeconds: 0.85

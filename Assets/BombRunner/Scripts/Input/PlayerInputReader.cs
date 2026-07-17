@@ -11,6 +11,7 @@ namespace BombRunner.Scripts.Input
 		private InputAction moveAction;
 		private InputAction dashAction;
 		private InputAction tauntAction;
+		private InputAction useItemAction;
 		private bool isReady;
 
 		private enum InputActionMapKind
@@ -22,7 +23,8 @@ namespace BombRunner.Scripts.Input
 		{
 			Move,
 			Dash,
-			Taunt
+			Taunt,
+			UseItem
 		}
 
 		public Vector2 Move
@@ -49,6 +51,22 @@ namespace BombRunner.Scripts.Input
 			{
 				EnsureReady();
 				return tauntAction != null && tauntAction.IsPressed();
+			}
+		}
+
+		public bool UseItemPressedThisFrame
+		{
+			get
+			{
+				EnsureReady();
+
+				if (useItemAction != null)
+				{
+					return useItemAction.WasPressedThisFrame();
+				}
+
+				// UseItem InputAction 연결 전까지 사용하는 임시 E 키 입력.
+				return Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
 			}
 		}
 
@@ -79,7 +97,7 @@ namespace BombRunner.Scripts.Input
 			playerActionMap.Disable();
 		}
 
-		// New Input System 의존성을 이 Reader 안에 가둬 PlayerController가 액션을 직접 보지 않게 한다.
+		// New Input System 의존성을 Reader 안에 가두는 입력 경계.
 		private void EnsureReady()
 		{
 			if (isReady)
@@ -102,6 +120,7 @@ namespace BombRunner.Scripts.Input
 			moveAction = playerActionMap.FindAction(nameof(PlayerInputAction.Move), true);
 			dashAction = playerActionMap.FindAction(nameof(PlayerInputAction.Dash), true);
 			tauntAction = playerActionMap.FindAction(nameof(PlayerInputAction.Taunt), false);
+			useItemAction = playerActionMap.FindAction(nameof(PlayerInputAction.UseItem), false);
 			isReady = true;
 		}
 	}

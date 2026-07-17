@@ -36,7 +36,12 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void Update()
 		{
-			if (!hasInputService || !isInputEnabled || stateController == null || !stateController.IsAlive)
+			// 입력 비활성, 다운, 스턴 상태의 도발 해제.
+			if (!hasInputService
+				|| !isInputEnabled
+				|| stateController == null
+				|| !stateController.IsAlive
+				|| stateController.IsStunned)
 			{
 				SetTaunting(false);
 				return;

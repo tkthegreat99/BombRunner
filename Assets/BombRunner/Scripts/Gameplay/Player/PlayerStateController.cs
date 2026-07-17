@@ -22,8 +22,11 @@ namespace BombRunner.Scripts.Gameplay.Player
 		[SerializeField] private bool isTarget;
 		[SerializeField] private bool isTaunting;
 		[SerializeField] private bool isDashLocked;
+		// 아이템 피격으로 인한 일시 행동 불가 상태.
+		[SerializeField] private bool isStunned;
 		private float tagImmuneDurationSeconds;
 		private float tagImmuneEndTime;
+		private float stunEndTime;
 
 		public event Action Changed;
 
@@ -37,7 +40,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 		public bool IsTarget => isTarget;
 		public bool IsTaunting => isTaunting;
 		public bool IsDashLocked => isDashLocked;
-		public bool CanDash => IsAlive && !isTaunting && !isDashLocked;
+		public bool IsStunned => isStunned;
+		public bool CanDash => IsAlive && !isTaunting && !isDashLocked && !isStunned;
 		public float TagImmuneNormalizedRemaining
 		{
 			get
@@ -98,6 +102,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 				isTarget = false;
 				isTaunting = false;
 				isDashLocked = false;
+				isStunned = false;
+				stunEndTime = 0f;
 			}
 
 			NotifyChanged();
@@ -110,7 +116,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public void SetDashing(bool value)
 		{
-			if (IsDowned && value)
+			if ((IsDowned || IsStunned) && value)
 			{
 				return;
 			}
@@ -163,7 +169,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public void SetTaunting(bool value)
 		{
-			if (IsDowned && value)
+			if ((IsDowned || IsStunned) && value)
 			{
 				return;
 			}
@@ -205,6 +211,45 @@ namespace BombRunner.Scripts.Gameplay.Player
 			if (changed)
 			{
 				NotifyChanged();
+			}
+		}
+
+		public void SetStunned(bool value, float durationSeconds = 0f)
+		{
+			// Host/Master 확정 대상인 스턴 상태 갱신.
+			if (IsDowned && value)
+			{
+				return;
+			}
+
+			var changed = isStunned != value;
+			isStunned = value;
+
+			if (value)
+			{
+				stunEndTime = Time.time + Mathf.Max(0f, durationSeconds);
+				changed |= isMoving || isDashing || isTaunting;
+				isMoving = false;
+				isDashing = false;
+				isTaunting = false;
+			}
+			else
+			{
+				stunEndTime = 0f;
+			}
+
+			if (changed)
+			{
+				NotifyChanged();
+			}
+		}
+
+		private void Update()
+		{
+			// 스턴 지속 시간 만료 처리.
+			if (isStunned && Time.time >= stunEndTime)
+			{
+				SetStunned(false);
 			}
 		}
 

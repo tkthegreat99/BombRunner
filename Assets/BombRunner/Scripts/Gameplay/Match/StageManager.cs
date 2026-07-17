@@ -3,6 +3,7 @@ using System.Threading;
 using BombRunner.Scripts.App;
 using BombRunner.Scripts.Bomb;
 using BombRunner.Scripts.Camera;
+using BombRunner.Scripts.Gameplay.Items;
 using BombRunner.Scripts.Gameplay.Player;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -22,6 +23,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly LocalMatchFlowService localMatchFlowService;
 		private readonly LocalPlayerSeparationService localPlayerSeparationService;
 		private readonly LocalDownedObstacleService localDownedObstacleService;
+		private readonly LocalItemService localItemService;
 		private readonly LocalTauntPrototype localTauntPrototype;
 		private readonly LocalWorldFeedbackView localWorldFeedbackView;
 		private readonly CancellationTokenSource cancellationTokenSource = new();
@@ -37,6 +39,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			LocalMatchFlowService localMatchFlowService,
 			LocalPlayerSeparationService localPlayerSeparationService,
 			LocalDownedObstacleService localDownedObstacleService,
+			LocalItemService localItemService,
 			LocalTauntPrototype localTauntPrototype,
 			LocalWorldFeedbackView localWorldFeedbackView)
 		{
@@ -50,6 +53,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.localMatchFlowService = localMatchFlowService;
 			this.localPlayerSeparationService = localPlayerSeparationService;
 			this.localDownedObstacleService = localDownedObstacleService;
+			this.localItemService = localItemService;
 			this.localTauntPrototype = localTauntPrototype;
 			this.localWorldFeedbackView = localWorldFeedbackView;
 		}
@@ -114,6 +118,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			localMatchFlowService.Initialize(players);
 			localPlayerSeparationService.Initialize(players);
 			localDownedObstacleService.Initialize(players);
+			localItemService.Initialize(players);
 			localTauntPrototype.Initialize(players);
 			localWorldFeedbackView.Initialize(players);
 		}

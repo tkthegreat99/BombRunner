@@ -72,7 +72,8 @@ namespace BombRunner.Scripts.Gameplay.Player
 				return;
 			}
 
-			if (stateController != null && stateController.IsTaunting)
+			// 도발 또는 스턴 중 이동 차단.
+			if (stateController != null && (stateController.IsTaunting || stateController.IsStunned))
 			{
 				stateController.SetMoving(false);
 				return;
@@ -105,7 +106,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 				stateController.SetMoving(isMoving);
 			}
 
-			// XZ 평면 이동만 처리하고, 입력이 없을 때는 마지막 이동 방향을 유지한다.
+			// XZ 평면 이동 처리와 마지막 이동 방향 유지.
 			if (isMoving)
 			{
 				lastMoveDirection = moveDirection;
