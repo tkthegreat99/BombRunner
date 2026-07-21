@@ -16,6 +16,8 @@ GameObject:
   - component: {fileID: 100008}
   - component: {fileID: 100009}
   - component: {fileID: 100010}
+  - component: {fileID: 100011}
+  - component: {fileID: 100012}
   m_Layer: 0
   m_Name: PrototypePlayer
   m_TagString: Player
@@ -158,6 +160,43 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 33db5bbb9673454f8d9be6f872f9f90f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &100011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  GlobalObjectIdHash: 0
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  Ownership: 0
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  InScenePlaced: 0
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &100012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f92d4028cb849d0a62ec901e71fd001, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &200000
 GameObject:
   m_ObjectHideFlags: 0

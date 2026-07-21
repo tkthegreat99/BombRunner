@@ -9,6 +9,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Items
 {
+	// 로컬 프로토타입 아이템 픽업, 투척, 피격 판정을 처리하는 서비스.
 	// 로컬 아이템 프로토타입 전체 흐름.
 	public sealed class LocalItemService : ITickable, IDisposable
 	{
@@ -95,6 +96,7 @@ namespace BombRunner.Scripts.Gameplay.Items
 
 		public void Tick()
 		{
+			// 매 프레임 픽업, 입력, 투척체 이동을 순서대로 갱신.
 			if (!isInitialized)
 			{
 				return;

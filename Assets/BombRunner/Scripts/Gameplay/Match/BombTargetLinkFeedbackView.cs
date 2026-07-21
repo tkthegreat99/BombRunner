@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 폭탄과 현재 타겟 사이를 선으로 잇는 월드 피드백 View.
 	public sealed class BombTargetLinkFeedbackView : MonoBehaviour
 	{
 		[SerializeField] private LineRenderer linkLine;
@@ -43,6 +44,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		private void EnsureRenderer()
 		{
+			// prefab 연결이 없을 때 최소 LineRenderer 생성.
 			if (linkLine == null)
 			{
 				linkLine = gameObject.AddComponent<LineRenderer>();

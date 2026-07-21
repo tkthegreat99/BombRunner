@@ -5,6 +5,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 플레이어끼리 겹치지 않도록 로컬 separation을 적용하는 서비스.
 	public sealed class LocalPlayerSeparationService : ITickable
 	{
 		private const float MinimumDistance = 0.001f;

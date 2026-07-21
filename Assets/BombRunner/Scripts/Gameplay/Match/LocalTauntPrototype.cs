@@ -7,6 +7,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 도발 hold 중 이동 잠금과 폭탄 타겟 리스크를 처리하는 로컬 프로토타입.
 	public sealed class LocalTauntPrototype : ITickable
 	{
 		private readonly BombSpawnService bombSpawnService;

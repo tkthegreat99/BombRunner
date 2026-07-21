@@ -5,6 +5,7 @@ using VContainer;
 namespace BombRunner.Scripts.Gameplay.Player
 {
 	[RequireComponent(typeof(CharacterController))]
+	// 로컬 프로토타입 플레이어의 XZ 평면 이동과 방향 회전 제어.
 	public sealed class PlayerMovementController : MonoBehaviour
 	{
 		[SerializeField] private float moveSpeed = 5f;
@@ -49,6 +50,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public void ApplyTemporarySlow(float durationSeconds, float speedMultiplier)
 		{
+			// 아이템 피격으로 인한 임시 감속 상태 갱신.
 			if (Time.time >= temporarySlowEndTime)
 			{
 				temporarySlowSpeedMultiplier = 1f;

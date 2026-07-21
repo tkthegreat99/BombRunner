@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 현재 폭탄 타겟 발밑에 링 마커를 표시하는 View.
 	public sealed class TargetMarkerFeedbackView : MonoBehaviour
 	{
 		[SerializeField] private LineRenderer markerRing;

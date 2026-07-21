@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Localization
 {
+	// Resources localization json을 읽고 키 기반 문자열을 제공하는 서비스.
 	public sealed class LocalizationService
 	{
 		private const string DefaultLanguageCode = "en";
@@ -159,10 +160,12 @@ namespace BombRunner.Scripts.Localization
 		[Serializable]
 		private sealed class LocalizationTable
 		{
+			// Unity JsonUtility가 읽는 localization entry 배열.
 			public LocalizationEntry[] entries;
 		}
 
 		[Serializable]
+		// 단일 localization key/value 레코드.
 		private sealed class LocalizationEntry
 		{
 			public string key;

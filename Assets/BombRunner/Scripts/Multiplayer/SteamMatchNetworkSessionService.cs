@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Multiplayer
 {
+	// Steam Lobby 소유자 정보를 매치 Host/Client 권한으로 매핑하는 서비스.
 	public sealed class SteamMatchNetworkSessionService : IMatchNetworkSessionService
 	{
 		private readonly ISteamworksClientService steamworksClientService;

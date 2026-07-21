@@ -9,6 +9,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 {
 	[RequireComponent(typeof(CharacterController))]
 	[RequireComponent(typeof(PlayerMovementController))]
+	// 로컬 프로토타입 플레이어의 짧은 회피 대시 입력과 쿨타임 제어.
 	public sealed class PlayerDashController : MonoBehaviour
 	{
 		[SerializeField] private float dashDistance = 4f;
@@ -65,6 +66,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void Update()
 		{
+			// 입력, 쿨타임, 상태 제약을 모두 만족할 때만 대시 시작.
 			if (!hasInputService || !isInputEnabled || !inputService.DashPressed || !CanDash())
 			{
 				return;

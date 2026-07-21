@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Input
 {
+	// PlayerInputReader 값을 gameplay용 인터페이스로 노출하는 어댑터.
 	public sealed class InputService : IInputService
 	{
 		private readonly PlayerInputReader inputReader;

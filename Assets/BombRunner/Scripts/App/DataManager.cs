@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 
 namespace BombRunner.Scripts.App
 {
+	// 밸런스와 맵, 아이템 정의 데이터를 불러올 서비스 자리.
 	public sealed class DataManager
 	{
 		private bool isInitialized;

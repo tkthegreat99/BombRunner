@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 도발 중 dash-lock 위험 영역을 링으로 표시하는 View.
 	public sealed class TauntAreaFeedbackView : MonoBehaviour
 	{
 		[SerializeField] private LineRenderer areaRing;

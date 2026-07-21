@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Authority
 {
+	// Host/Master가 확정해야 하는 매치 판정을 한곳에 모으는 권한 인터페이스.
 	public interface IMatchAuthorityService
 	{
 		bool TryTransferTarget(PlayerStateController fromPlayer, PlayerStateController toPlayer);

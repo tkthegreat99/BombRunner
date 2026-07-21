@@ -15,6 +15,10 @@
 - `SteamworksClientService` currently owns Facepunch Steam client init, callback pumping, and shutdown while keeping the old service name temporarily.
 - `SteamLobbyService` owns Facepunch Steam quick-match lobby creation, invite overlay, command-line `+connect_lobby` handling, lobby member count, and simple lobby match-state metadata.
 - Netcode for GameObjects and Facepunch Transport are installed for the next multiplayer integration step.
+- `SteamNgoSessionBootstrapService` now bridges Steam Lobby completion into NGO Host/Client startup for the first friend movement sync.
+- `NetworkPlayerRuntimeSettings` temporarily carries VContainer-owned local dependencies into NGO-spawned player prefabs.
+- `NetworkPlayerMovementController` owns the first Host-authoritative movement sync path and temporary world-space nameplates.
+- The embedded Facepunch Transport is patched so it reuses an already initialized SteamClient instead of calling `SteamClient.Init` twice.
 - `LocalMatchFlowService` owns the local bomb spawn countdown, activation, explosion response, respawn loop, and one-survivor match end.
 - `LocalMatchFeedbackView` is an Overlay Canvas bridge View for bomb spawn warning, bomb start countdown, match result display, explosion decision feedback, and tag rejection feedback.
 - `LocalQuickMatchWaitingView` is an Overlay Canvas waiting-room status View. It must be wired to a scene or prefab UI Text instead of creating runtime UI.
@@ -31,7 +35,8 @@
 ## Authority Rules
 - Host/Master confirms target changes, tag immunity, bomb phase randomization, explosion victim, downed state, taunt effects, item pickup/throw/hit, and status effects.
 - Current local authority confirms random next-target selection, bomb phase duration randomization, explosion victim selection, downed-state application, item pickup/throw/hit, target transfer, and taunt-risk target changes.
-- Steam Lobby currently coordinates friend testing only up to lobby/waiting/countdown flow. Real-time gameplay synchronization should move through Netcode for GameObjects with Facepunch Transport.
+- Steam Lobby coordinates friend testing up to lobby/waiting/countdown flow, then NGO with Facepunch Transport starts the first real-time player spawn and movement sync.
+- Steam Lobby metadata remains discovery/state coordination only. Authoritative gameplay state should move through NGO instead of Lobby data.
 - Clients send input and play local presentation, then reconcile to authoritative results.
 - Local prototype code may simulate Host/Master authority, but comments should state the future authority boundary.
 

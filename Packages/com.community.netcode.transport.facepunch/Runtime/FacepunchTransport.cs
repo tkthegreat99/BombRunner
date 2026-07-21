@@ -17,6 +17,7 @@ namespace Netcode.Transports.Facepunch
         private SocketManager socketManager;
         private Dictionary<ulong, Client> connectedClients;
         private bool m_SteamInitialized;
+        private bool steamClientOwnedByTransport;
 
         [Space]
         [Tooltip("The Steam App ID of your game. Technically you're not allowed to use 480, but Valve doesn't do anything about it so it's fine for testing purposes.")]
@@ -94,12 +95,23 @@ namespace Netcode.Transports.Facepunch
         {
             connectedClients = new Dictionary<ulong, Client>();
 
+            if (SteamClient.IsValid)
+            {
+                // BombRunner의 SteamworksClientService가 먼저 초기화한 SteamClient를 재사용하는 경로.
+                steamClientOwnedByTransport = false;
+                return;
+            }
+
             try
             {
+                // Transport 단독 사용 시에만 SteamClient를 직접 초기화하는 예비 경로.
                 SteamClient.Init(steamAppId, false);
+                steamClientOwnedByTransport = true;
             }
             catch (Exception e)
             {
+                steamClientOwnedByTransport = false;
+
                 if (LogLevel <= LogLevel.Error)
                     Debug.LogError($"[{nameof(FacepunchTransport)}] - Caught an exeption during initialization of Steam client: {e}");
             }
@@ -127,7 +139,14 @@ namespace Netcode.Transports.Facepunch
 
                 connectionManager?.Close();
                 socketManager?.Close();
-                SteamClient.Shutdown();
+
+                if (steamClientOwnedByTransport && SteamClient.IsValid)
+                {
+                    // 외부 서비스가 Steam lifetime을 관리하는 경우에는 종료하지 않는 소유권 보호.
+                    SteamClient.Shutdown();
+                }
+
+                steamClientOwnedByTransport = false;
             }
             catch (Exception e)
             {

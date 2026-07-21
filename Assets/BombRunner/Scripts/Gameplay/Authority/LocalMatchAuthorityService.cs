@@ -10,6 +10,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Authority
 {
+	// 로컬 프로토타입에서 Host/Master 권한 판정을 즉시 수행하는 구현.
 	public sealed class LocalMatchAuthorityService : IMatchAuthorityService, IDisposable
 	{
 		private readonly BombTargetService bombTargetService;
@@ -267,6 +268,7 @@ namespace BombRunner.Scripts.Gameplay.Authority
 
 		private bool CanConfirmAuthority()
 		{
+			// 로컬 Host 또는 Steam Lobby owner만 authoritative 판정 허용.
 			return networkSessionService == null || networkSessionService.IsHostAuthority;
 		}
 

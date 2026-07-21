@@ -6,6 +6,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Player
 {
+	// 로컬 플레이어, 더미, 이전 Steam 수동 플레이어 스폰을 담당하는 서비스.
 	public sealed class PlayerSpawnService
 	{
 		private readonly IObjectResolver objectResolver;
@@ -70,6 +71,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public GameObject[] SpawnSteamLobbyPlayers(ulong[] memberSteamIds, ulong localSteamId)
 		{
+			// NGO 이전 수동 Steam 로비 스폰 경로. 이후 네트워크 스폰으로 축소 대상.
 			if (memberSteamIds == null || memberSteamIds.Length == 0)
 			{
 				return Array.Empty<GameObject>();
@@ -149,6 +151,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void ApplySettings(GameObject player)
 		{
+			// ScriptableObject 스폰 설정을 플레이어 컨트롤러에 주입.
 			if (player.TryGetComponent<PlayerMovementController>(out var movementController))
 			{
 				movementController.Initialize(
@@ -169,6 +172,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void ApplyPlayerState(GameObject player, string playerLabel)
 		{
+			// 새로 생성된 플레이어의 매치 상태 초기화.
 			if (!player.TryGetComponent<PlayerStateController>(out var stateController))
 			{
 				return;

@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Camera
 {
+	// 로컬 또는 소유 플레이어를 따라가는 임시 탑다운 카메라.
 	public sealed class LocalPlayerCameraFollow : MonoBehaviour
 	{
 		[SerializeField] private Vector3 followOffset = new(0f, 9f, -10f);

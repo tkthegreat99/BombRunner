@@ -3,6 +3,7 @@ using UnityEngine;
 namespace BombRunner.Scripts.Gameplay.Player
 {
 	[RequireComponent(typeof(PlayerStateController))]
+	// PlayerStateController의 이동/대시 상태를 Animator 상태로 반영하는 View.
 	public sealed class PlayerAnimationController : MonoBehaviour
 	{
 		[SerializeField] private Animator animator;
@@ -51,6 +52,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void ApplyState()
 		{
+			// 상태 변화가 있을 때만 Animator 전환 적용.
 			if (animator == null)
 			{
 				return;

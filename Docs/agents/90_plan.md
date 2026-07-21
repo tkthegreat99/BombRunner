@@ -1,6 +1,6 @@
 # Development Plan
 
-## Current Status: Local Quick Match, Localization, and Prefab Feedback Baseline
+## Current Status: Local Quick Match, Localization, Prefab Feedback, and Steam NGO First Sync
 - Bootstrap and Game scene transition are in place.
 - `SceneFlowService` carries the requested `MatchMode` into the Game scene.
 - `MatchMode.LocalInstantMatch` starts the local match loop immediately.
@@ -21,7 +21,13 @@
 - Early multiplayer session scaffolding exists through `IMatchNetworkSessionService`; the current implementation maps Steam Lobby ownership through `SteamMatchNetworkSessionService` and falls back to local Host authority without a lobby.
 - Facepunch.Steamworks is provided through Facepunch Transport, and Steam Lobby smoke-test support exists for creating a friends-only lobby, opening the Steam invite overlay, joining by `+connect_lobby`, reading lobby member count, and propagating waiting/countdown/starting metadata.
 - Netcode for GameObjects and Facepunch Transport are installed for real gameplay synchronization.
-- In Steam lobby matches, non-host clients no longer start the local bomb/match authority loop; the next step is replacing the removed temporary P2P snapshot path with NGO network spawn and authoritative state replication.
+- Steam lobby matches now enter an NGO bootstrap after waiting/countdown.
+- Steam lobby owner starts as NGO Host.
+- Steam lobby non-owner starts as NGO Client and connects to the owner Steam ID through Facepunch Transport.
+- `PrototypePlayer` has NGO prefab wiring for the first sync step.
+- `NetworkPlayerMovementController` provides the first Host-authoritative movement sync and temporary overhead nickname display.
+- Steam NGO mode intentionally keeps bomb, target, items, taunt, explosion, and winner authority disabled until player spawn/movement is stable.
+- Facepunch Transport is patched to avoid reinitializing SteamClient after `SteamworksClientService` already owns it.
 - `Game` scene now contains scene-placed bridge Views for quick-match waiting status, match feedback, world feedback, and bomb-spawn camera focus.
 - `GameLifetimeScope` no longer creates `LocalMatchFeedbackView`, `LocalQuickMatchWaitingView`, or bomb-spawn camera focus objects at runtime; missing View wiring is treated as a scene setup error.
 - Localization foundation is in place through `LocalizationService` plus `Assets/BombRunner/Resources/Localization/en.json` and `ko.json`.
@@ -30,46 +36,44 @@
 - Target marker, bomb-target link, taunt dash-lock area, explosion decision ring, selected victim marker, and tag immunity feedback now have prefab/View entry points.
 - The TextMesh Pro experiment was rolled back; current UI bridge Views stay on `UnityEngine.UI.Text`.
 
-## Active Priority: NGO + FacepunchTransport First Sync
+## Active Priority: Stabilize Steam NGO Friend Movement Test
 1. Stabilize the package baseline:
    - Keep Facepunch Transport embedded under `Packages/com.community.netcode.transport.facepunch` because the Git package currently has a duplicate `#endregion` compile issue with this project setup.
    - Keep Steamworks.NET removed; Facepunch.Steamworks comes from the Facepunch Transport package.
-   - Confirm Unity Console is clear after package import and script reload.
-2. Add an NGO session bootstrap:
-   - Create a scene or service-owned `NetworkManager` setup using Facepunch Transport.
-   - Steam lobby owner starts `NetworkManager.StartHost()`.
-   - Non-owner lobby members set `FacepunchTransport.targetSteamId` to the lobby owner Steam ID and call `NetworkManager.StartClient()`.
-   - Keep Steam Lobby responsible only for discovery, invite, ownership, and lobby metadata.
-3. Replace Steam-lobby manual player spawning with network spawning:
-   - Add `NetworkObject` to the player prefab.
-   - Register the player prefab in NGO network prefabs.
-   - Host spawns one network player per connected client.
-   - Preserve local single-player fallback through the existing local spawn path.
-4. Implement minimum player movement sync:
-   - First target is "two Steam users can see each other move in the same map."
-   - Keep local input only on the owning client.
-   - Send movement intent or position through NGO in a Host-authoritative shape.
-   - Avoid syncing bomb, target, items, and taunt until basic player spawn/motion is stable.
-5. Move authority decisions onto NGO after movement works:
+   - Keep `SteamworksClientService` as the single SteamClient lifetime owner.
+2. Validate the friend-test build:
+   - Both players use the newest `Builds/BombRunner_FriendTest_NGO.zip`.
+   - Host creates Steam lobby and invites friend.
+   - Client accepts invite and does not press Enter.
+   - Both machines converge to `2/8`, then countdown.
+   - Host logs `StartHost result=True`.
+   - Client logs `StartClient result=True`.
+   - Both machines see both players and nicknames.
+3. Harden first movement sync:
+   - Confirm owner-only input moves the correct player.
+   - Add send-rate limiting or input threshold if client RPC spam becomes visible.
+   - Replace temporary runtime-created nameplate with prefab View once UI direction is settled.
+4. Move authority decisions onto NGO after movement works:
    - Host confirms bomb target, explosion victim, downed state, item pickup/throw/hit, target transfer, taunt risk, and match end.
    - Use the existing `IMatchAuthorityService` boundary as the migration seam.
    - Keep presentation and local feedback separate from authoritative results.
 
 ## Next
-1. Implement the NGO session bootstrap:
-   - Add the runtime object/component that owns `NetworkManager` and Facepunch Transport startup.
-   - Wire Host/Client startup from `ISteamLobbyService` and `SteamMatchNetworkSessionService`.
-   - Add clear logs for lobby owner Steam ID, local Steam ID, Host/Client decision, and connect attempt.
-2. Implement network player spawn and local ownership:
-   - Add required NGO components to the player prefab.
-   - Route local input to the owned player only.
-   - Disable local-only dummy spawning for Steam lobby network matches.
-3. Validate with the friend-test build:
+1. Validate with the friend-test build:
    - Host creates Steam lobby and invites friend.
    - Client accepts invite and joins lobby.
    - Host starts as NGO Host; client starts as NGO Client.
    - Both machines see both players.
    - Local movement from each machine is visible on the other.
+2. Capture and compare logs:
+   - Confirm both logs include `Facepunch Steam lobby state updated`.
+   - Confirm Host log includes `StartHost result=True`.
+   - Confirm Client log includes `StartClient result=True`.
+   - If connection stalls, inspect Facepunch Transport connecting/disconnected lines before changing gameplay code.
+3. Replace temporary player sync pieces:
+   - Move runtime-created nameplate into a prefab View.
+   - Move `NetworkPlayerRuntimeSettings` toward an explicit player context/factory boundary.
+   - Add a scene-placed or prefab-owned NetworkManager when the final network scene flow is decided.
 4. Keep local prototype regression checks:
    - Enter local quick match from the menu.
    - Confirm local player plus dummy players still spawn.

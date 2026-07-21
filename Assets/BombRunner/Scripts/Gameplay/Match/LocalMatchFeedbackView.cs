@@ -8,6 +8,7 @@ using VContainer;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 로컬 매치의 오버레이 텍스트와 월드 판정 피드백을 중계하는 View.
 	public sealed class LocalMatchFeedbackView : MonoBehaviour
 	{
 		private const string BombSpawnKey = "match.feedback.bomb_spawn";
@@ -43,6 +44,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		public void ShowSpawnCue(Vector3 spawnPosition, float radius, float height, float durationSeconds)
 		{
+			// 폭탄 스폰 예고 텍스트 표시.
 			if (spawnCueText == null)
 			{
 				if (!didWarnMissingSpawnCueText)
@@ -71,6 +73,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			float holdSeconds,
 			Transform selectedTarget)
 		{
+			// 폭발 판정 링과 선택 피해자 마커 표시.
 			if (explosionDecisionFeedbackPrefab == null)
 			{
 				if (!didWarnMissingExplosionDecisionPrefab)
@@ -125,6 +128,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			Transform cameraTransform,
 			CancellationToken cancellationToken)
 		{
+			// 폭탄 활성화 전 카운트다운 표시.
 			var hasCountdownText = bombStartCountdownText != null;
 
 			if (!hasCountdownText && !didWarnMissingBombStartCountdownText)

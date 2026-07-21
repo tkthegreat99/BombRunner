@@ -6,6 +6,7 @@ using VContainer;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 타겟 마커, 폭탄 연결선, 도발 영역 같은 월드 피드백을 관리하는 View.
 	public sealed class LocalWorldFeedbackView : MonoBehaviour
 	{
 		[SerializeField] private Transform feedbackRoot;

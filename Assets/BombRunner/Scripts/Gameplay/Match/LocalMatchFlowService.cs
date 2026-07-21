@@ -10,6 +10,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 로컬 프로토타입 매치의 폭탄 루프와 승리 종료를 관리하는 서비스.
 	public sealed class LocalMatchFlowService : IDisposable
 	{
 		private readonly BombSpawnService bombSpawnService;

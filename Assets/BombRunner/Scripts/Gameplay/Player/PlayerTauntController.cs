@@ -5,6 +5,7 @@ using VContainer;
 namespace BombRunner.Scripts.Gameplay.Player
 {
 	[RequireComponent(typeof(PlayerStateController))]
+	// 로컬 도발 hold 입력을 PlayerStateController의 taunting 상태로 반영하는 컨트롤러.
 	public sealed class PlayerTauntController : MonoBehaviour
 	{
 		private IInputService inputService;

@@ -12,6 +12,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// Game 씬 시작 시 로컬 또는 Steam NGO 매치 흐름을 조립하는 진입점.
 	public sealed class StageManager : IStartable, IDisposable
 	{
 		private readonly SceneFlowService sceneFlowService;
@@ -20,6 +21,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 		private readonly DashCooldownLogView dashCooldownLogView;
 		private readonly BombTargetService bombTargetService;
 		private readonly IMatchNetworkSessionService networkSessionService;
+		private readonly SteamNgoSessionBootstrapService steamNgoSessionBootstrapService;
 		private readonly ISteamworksClientService steamworksClientService;
 		private readonly ISteamLobbyService steamLobbyService;
 		private readonly LocalTargetTossPrototype localTargetTossPrototype;
@@ -39,6 +41,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			DashCooldownLogView dashCooldownLogView,
 			BombTargetService bombTargetService,
 			IMatchNetworkSessionService networkSessionService,
+			SteamNgoSessionBootstrapService steamNgoSessionBootstrapService,
 			ISteamworksClientService steamworksClientService,
 			ISteamLobbyService steamLobbyService,
 			LocalTargetTossPrototype localTargetTossPrototype,
@@ -56,6 +59,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			this.dashCooldownLogView = dashCooldownLogView;
 			this.bombTargetService = bombTargetService;
 			this.networkSessionService = networkSessionService;
+			this.steamNgoSessionBootstrapService = steamNgoSessionBootstrapService;
 			this.steamworksClientService = steamworksClientService;
 			this.steamLobbyService = steamLobbyService;
 			this.localTargetTossPrototype = localTargetTossPrototype;
@@ -88,28 +92,22 @@ namespace BombRunner.Scripts.Gameplay.Match
 				&& steamLobbyService.IsInLobby
 				&& steamworksClientService != null
 				&& steamworksClientService.IsInitialized;
-			GameObject player;
-			PlayerStateController[] players;
 
+			// Steam Lobby 매치에서는 NGO 첫 동기화 경로로 분기.
 			if (isSteamLobbyMatch)
 			{
-				var playerObjects = playerSpawnService.SpawnSteamLobbyPlayers(
-					steamLobbyService.GetLobbyMemberSteamIds(),
-					steamworksClientService.LocalSteamId);
-				player = FindLocalPlayerObject(playerObjects, steamworksClientService.LocalSteamId);
-				players = GetPlayerStates(playerObjects);
+				await RunSteamLobbyNetworkStageAsync(cancellationToken);
+				return;
 			}
-			else
+
+			var player = playerSpawnService.SpawnLocalPlayer();
+			var dummyPlayers = playerSpawnService.SpawnDummyPlayers();
+			var players = GetPlayerStates(new[]
 			{
-				player = playerSpawnService.SpawnLocalPlayer();
-				var dummyPlayers = playerSpawnService.SpawnDummyPlayers();
-				players = GetPlayerStates(new[]
-				{
-					player,
-					dummyPlayers[0],
-					dummyPlayers[1]
-				});
-			}
+				player,
+				dummyPlayers[0],
+				dummyPlayers[1]
+			});
 
 			if (player == null || players == null || players.Length == 0)
 			{
@@ -138,12 +136,6 @@ namespace BombRunner.Scripts.Gameplay.Match
 			bombTargetService.Initialize(players);
 			localWorldFeedbackView.Initialize(players);
 
-			if (isSteamLobbyMatch && !networkSessionService.IsHostAuthority)
-			{
-				Debug.Log("StageManager: Steam client follows Host/Master snapshots.");
-				return;
-			}
-
 			localTargetTossPrototype.Initialize(players);
 			localMatchFlowService.Initialize(players);
 			localPlayerSeparationService.Initialize(players);
@@ -152,26 +144,38 @@ namespace BombRunner.Scripts.Gameplay.Match
 			localTauntPrototype.Initialize(players);
 		}
 
-		private GameObject FindLocalPlayerObject(GameObject[] playerObjects, ulong localSteamId)
+		private async UniTask RunSteamLobbyNetworkStageAsync(CancellationToken cancellationToken)
 		{
-			if (playerObjects == null)
+			// 로비 waiting/countdown은 기존 View와 Steam Lobby metadata 흐름 재사용.
+			if (sceneFlowService.RequestedMatchMode == MatchMode.LocalQuickMatchWaiting)
 			{
-				return null;
+				Debug.Log("StageManager: Steam lobby waiting flow started.");
+				await localQuickMatchWaitingService.WaitForMatchStartAsync(Array.Empty<PlayerStateController>(), cancellationToken);
 			}
 
-			for (var i = 0; i < playerObjects.Length; i++)
+			if (cancellationToken.IsCancellationRequested)
 			{
-				var playerObject = playerObjects[i];
-
-				if (playerObject != null
-					&& playerObject.TryGetComponent<PlayerNetworkIdentity>(out var networkIdentity)
-					&& networkIdentity.SteamId == localSteamId)
-				{
-					return playerObject;
-				}
+				return;
 			}
 
-			return null;
+			var player = await steamNgoSessionBootstrapService.StartSteamLobbySessionAsync(cancellationToken);
+
+			// NGO PlayerObject 생성 실패 시 네트워크 gameplay 진입 중단.
+			if (player == null)
+			{
+				Debug.LogWarning("StageManager: Steam NGO session did not provide a local player.");
+				return;
+			}
+
+			// 첫 동기화 목표 범위: 로컬 카메라를 소유 PlayerObject에 연결.
+			cameraFollow.SetTarget(player.transform);
+
+			if (player.TryGetComponent<PlayerDashController>(out var dashController))
+			{
+				dashCooldownLogView.SetTarget(dashController);
+			}
+
+			Debug.Log("StageManager: Steam NGO player spawn and movement sync stage started. Bomb, target, item, and taunt authority stay disabled for this first sync step.");
 		}
 
 		private PlayerStateController[] GetPlayerStates(GameObject[] playerObjects)

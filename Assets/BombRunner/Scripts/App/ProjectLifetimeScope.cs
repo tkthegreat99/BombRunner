@@ -6,6 +6,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.App
 {
+	// 게임 실행 동안 유지되는 전역 VContainer LifetimeScope.
 	public sealed class ProjectLifetimeScope : LifetimeScope
 	{
 		// 게임 흐름과 전역 설정은 GameSettings ScriptableObject에서만 관리.

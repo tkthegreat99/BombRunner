@@ -5,6 +5,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 다운된 플레이어를 살아 있는 플레이어의 감속 장애물로 처리하는 서비스.
 	public sealed class LocalDownedObstacleService : ITickable
 	{
 		private readonly GameBalanceSettings balanceSettings;
@@ -46,6 +47,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 
 		public void Tick()
 		{
+			// 다운 플레이어별로 살아 있는 플레이어의 밟힘 판정 갱신.
 			if (!isInitialized)
 			{
 				return;

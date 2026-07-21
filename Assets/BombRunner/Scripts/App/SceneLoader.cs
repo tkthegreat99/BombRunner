@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 
 namespace BombRunner.Scripts.App
 {
+	// UniTask 기반 단일 씬 전환 경계.
 	public sealed class SceneLoader
 	{
 		// GameSettings에서 전달된 씬 이름만 사용해 raw string 분산 방지

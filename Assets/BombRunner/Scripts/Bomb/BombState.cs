@@ -2,6 +2,7 @@ using BombRunner.Scripts.Gameplay.Player;
 
 namespace BombRunner.Scripts.Bomb
 {
+	// 현재 폭탄의 타겟, 페이즈, 속도, 폭발 반경을 담는 매치 상태.
 	public sealed class BombState
 	{
 		// 이후 Host/Master 권한의 Networked State 또는 RPC 동기화 대상으로 이동할 폭탄 핵심 상태입니다.

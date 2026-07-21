@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 태그 면역으로 타겟 전달이 거부되었을 때 머리 위 텍스트를 띄우는 View.
 	public sealed class TagImmuneFeedbackView : MonoBehaviour
 	{
 		[SerializeField] private TextMesh textMesh;

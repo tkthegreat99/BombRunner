@@ -4,12 +4,14 @@ using UnityEngine.Serialization;
 
 namespace BombRunner.Scripts.Gameplay.Player
 {
+	// 플레이어 생존 가능 여부를 나누는 생명 상태.
 	public enum PlayerLifeState
 	{
 		Alive,
 		Downed
 	}
 
+	// 플레이어의 생존, 이동, 타겟, 면역, 상태이상 플래그를 보관하는 상태 컴포넌트.
 	public sealed class PlayerStateController : MonoBehaviour
 	{
 		[SerializeField] private string playerLabel = "Player";
@@ -83,6 +85,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public void SetLifeState(PlayerLifeState value)
 		{
+			// 다운 진입 시 승리/타겟/행동 후보에서 제외되도록 상태 정리.
 			if (lifeState == value)
 			{
 				isAlive = value == PlayerLifeState.Alive;
@@ -131,6 +134,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		public void SetTagImmune(bool value, float durationSeconds)
 		{
+			// 태그 면역은 타겟 전달만 막는 상태.
 			if (IsDowned && value)
 			{
 				return;

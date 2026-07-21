@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 
 namespace BombRunner.Scripts.App
 {
+	// 메뉴 선택 결과를 다음 씬의 StageManager까지 전달하는 씬 흐름 서비스.
 	public sealed class SceneFlowService
 	{
 		private readonly SceneLoader sceneLoader;
@@ -24,12 +25,14 @@ namespace BombRunner.Scripts.App
 
 		public async UniTask LoadLocalInstantMatchAsync(CancellationToken cancellationToken)
 		{
+			// 즉시 로컬 매치 진입 요청 기록.
 			SetRequestedMatchMode(MatchMode.LocalInstantMatch);
 			await sceneLoader.LoadSceneAsync(gameSettings.GameSceneName, cancellationToken);
 		}
 
 		public async UniTask LoadLocalQuickMatchWaitingAsync(CancellationToken cancellationToken)
 		{
+			// 대기장 표시 후 로컬/Steam 매치 진입 요청 기록.
 			SetRequestedMatchMode(MatchMode.LocalQuickMatchWaiting);
 			await sceneLoader.LoadSceneAsync(gameSettings.QuickMatchWaitingSceneName, cancellationToken);
 		}

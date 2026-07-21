@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 폭발 범위와 선택 피해자를 잠깐 보여주는 월드 피드백 View.
 	public sealed class ExplosionDecisionFeedbackView : MonoBehaviour
 	{
 		[SerializeField] private LineRenderer explosionRing;
@@ -49,6 +50,7 @@ namespace BombRunner.Scripts.Gameplay.Match
 			Transform selectedTarget,
 			CancellationToken cancellationToken)
 		{
+			// 폭발 판정 결과를 짧은 확장 링으로 시각화.
 			if (!EnsureRequiredReferences())
 			{
 				Destroy(gameObject);

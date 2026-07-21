@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Player
 {
+	// 대시 가능 상태 변화를 콘솔로 확인하는 임시 로그 View.
 	public sealed class DashCooldownLogView : MonoBehaviour
 	{
 		private PlayerDashController dashController;

@@ -4,6 +4,7 @@ using UnityEngine.Serialization;
 namespace BombRunner.Scripts.Gameplay.Player
 {
 	[RequireComponent(typeof(PlayerStateController))]
+	// 플레이어의 타겟 표시와 태그 면역 게이지를 갱신하는 View.
 	public sealed class PlayerTargetIndicatorView : MonoBehaviour
 	{
 		[SerializeField] private GameObject targetIndicatorRoot;
@@ -66,6 +67,7 @@ namespace BombRunner.Scripts.Gameplay.Player
 
 		private void ApplyTagImmuneGauge()
 		{
+			// 남은 태그 면역 시간을 scale 비율로 표시.
 			if (activeTagImmuneGauge == null)
 			{
 				return;

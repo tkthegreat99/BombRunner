@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Bomb
 {
+	// 로컬 프로토타입 폭탄의 페이즈 진행, 추격, 폭발 판정을 담당하는 컨트롤러.
 	public sealed class BombCreatureController : MonoBehaviour
 	{
 		private const float Acceleration = 15f;
@@ -71,6 +72,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private void Update()
 		{
+			// 활성화 이후 매 프레임 페이즈, 추격, 임시 연출 갱신.
 			if (!isInitialized || !isActivated || hasExploded)
 			{
 				return;
@@ -113,6 +115,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private void AdvanceTimerPhaseOrExplode()
 		{
+			// Calm, Warning, Overdrive 순서 후 폭발.
 			if (bombState.TimerPhase == BombTimerPhase.Calm)
 			{
 				SetTimerPhase(BombTimerPhase.Warning);
@@ -146,6 +149,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private void ChaseTarget()
 		{
+			// 타겟이 없거나 다운되면 감속 정지.
 			var targetPlayer = bombTargetService.TargetPlayer;
 
 			if (targetPlayer == null || !targetPlayer.IsAlive)
@@ -257,6 +261,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private PlayerStateController ResolveClosestPlayerDown()
 		{
+			// 폭발 범위 안 가장 가까운 생존자만 다운 처리.
 			var closestPlayer = matchAuthorityService.ResolveExplosionVictim(
 				transform.position,
 				players,

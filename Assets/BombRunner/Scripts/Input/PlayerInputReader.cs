@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace BombRunner.Scripts.Input
 {
+	// Unity New Input System 액션을 읽어 현재 프레임 입력 상태로 변환하는 Reader.
 	public sealed class PlayerInputReader : MonoBehaviour
 	{
 		[SerializeField] private InputActionAsset inputActions;
@@ -16,11 +17,13 @@ namespace BombRunner.Scripts.Input
 
 		private enum InputActionMapKind
 		{
+			// InputActionAsset 안의 플레이어 조작 맵 이름.
 			Player
 		}
 
 		private enum PlayerInputAction
 		{
+			// InputActionAsset 안의 플레이어 액션 이름.
 			Move,
 			Dash,
 			Taunt,

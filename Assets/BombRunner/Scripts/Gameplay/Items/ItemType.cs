@@ -1,5 +1,6 @@
 namespace BombRunner.Scripts.Gameplay.Items
 {
+	// 프로토타입 아이템 효과 종류.
 	// 프로토타입 아이템 종류.
 	public enum ItemType
 	{

@@ -3,6 +3,7 @@ using Cysharp.Threading.Tasks;
 
 namespace BombRunner.Scripts.App
 {
+	// 전역 사운드 상태와 오디오 풀을 담당할 서비스 자리.
 	public sealed class SoundManager
 	{
 		private bool isInitialized;

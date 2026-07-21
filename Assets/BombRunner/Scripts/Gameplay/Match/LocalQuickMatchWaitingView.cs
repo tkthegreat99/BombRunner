@@ -5,6 +5,7 @@ using VContainer;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 빠른 대전 대기 상태와 카운트다운 텍스트를 표시하는 Overlay View.
 	public sealed class LocalQuickMatchWaitingView : MonoBehaviour
 	{
 		private const string WaitingCountKey = "quick_match.waiting_count";

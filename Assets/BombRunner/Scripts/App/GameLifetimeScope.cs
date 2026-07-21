@@ -15,6 +15,7 @@ using VContainer.Unity;
 namespace BombRunner.Scripts.App
 {
 	[RequireComponent(typeof(PlayerInputReader))]
+	// Game 씬의 로컬/네트워크 프로토타입 서비스를 조립하는 LifetimeScope.
 	public sealed class GameLifetimeScope : LifetimeScope
 	{
 		[SerializeField] private PlayerInputReader playerInputReader;
@@ -160,6 +161,8 @@ namespace BombRunner.Scripts.App
 			builder.RegisterInstance(activeBalanceSettings);
 			builder.Register<IInputService, InputService>(Lifetime.Scoped);
 			builder.Register<IMatchNetworkSessionService, SteamMatchNetworkSessionService>(Lifetime.Scoped);
+			// Steam Lobby 매치를 NGO Host/Client 세션으로 시작하는 첫 동기화 부트스트랩.
+			builder.Register<SteamNgoSessionBootstrapService>(Lifetime.Scoped);
 			builder.Register<PlayerSpawnService>(Lifetime.Scoped);
 			builder.Register<BombState>(Lifetime.Scoped);
 			builder.Register<BombTargetService>(Lifetime.Scoped);

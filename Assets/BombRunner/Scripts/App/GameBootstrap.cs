@@ -6,6 +6,7 @@ using VContainer;
 
 namespace BombRunner.Scripts.App
 {
+	// Init 씬에서 전역 서비스 초기화 후 MainMenu로 넘기는 앱 부트스트랩.
 	public sealed class GameBootstrap : MonoBehaviour
 	{
 		private SaveService saveService;

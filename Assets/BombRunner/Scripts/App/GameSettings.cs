@@ -3,6 +3,7 @@ using UnityEngine;
 namespace BombRunner.Scripts.App
 {
 	[CreateAssetMenu(fileName = "GameSettings", menuName = "Boom Runner/Game Settings")]
+	// 씬 이름과 빠른 대전 프로토타입 값을 모아두는 전역 설정.
 	public sealed class GameSettings : ScriptableObject
 	{
 		// 부트스트랩이 시작되는 Init 씬 이름

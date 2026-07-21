@@ -7,6 +7,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Bomb
 {
+	// 로컬 프로토타입 폭탄 생성과 제거를 담당하는 스폰 서비스.
 	public sealed class BombSpawnService
 	{
 		private readonly IObjectResolver objectResolver;
@@ -45,6 +46,7 @@ namespace BombRunner.Scripts.Bomb
 
 		public BombCreatureController SpawnLocalBomb(PlayerStateController[] players, Vector3 spawnPosition)
 		{
+			// 한 라운드에 활성 폭탄 하나만 유지하는 임시 규칙.
 			if (bombInstance != null)
 			{
 				return bombInstance.TryGetComponent<BombCreatureController>(out var currentController) ? currentController : null;
@@ -98,6 +100,7 @@ namespace BombRunner.Scripts.Bomb
 
 		private Vector3 GetSpawnPosition(PlayerStateController[] players)
 		{
+			// 살아 있는 플레이어 중심을 우선하고, 전원 다운 예외에서는 전체 중심 사용.
 			var aliveCount = 0;
 			var spawnPosition = Vector3.zero;
 			var fallbackPosition = Vector3.zero;

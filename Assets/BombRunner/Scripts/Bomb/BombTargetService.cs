@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Bomb
 {
+	// 폭탄 타겟 상태를 플레이어 표시 상태와 함께 갱신하는 서비스.
 	public sealed class BombTargetService
 	{
 		private readonly BombState bombState;

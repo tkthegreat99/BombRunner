@@ -9,6 +9,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.App
 {
+	// MainMenu의 임시 입력 기반 빠른 시작 컨트롤러.
 	public sealed class MainMenuQuickStartController : MonoBehaviour
 	{
 		private SceneFlowService sceneFlowService;

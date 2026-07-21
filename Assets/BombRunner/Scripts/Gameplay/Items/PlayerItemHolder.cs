@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace BombRunner.Scripts.Gameplay.Items
 {
+	// 플레이어가 현재 들고 있는 단일 아이템 상태.
 	// 플레이어의 단일 아이템 보유 상태.
 	[RequireComponent(typeof(PlayerStateController))]
 	public sealed class PlayerItemHolder : MonoBehaviour

@@ -3,6 +3,7 @@ using UnityEngine;
 namespace BombRunner.Scripts.Gameplay.Player
 {
 	[CreateAssetMenu(fileName = "PlayerSpawnSettings", menuName = "Boom Runner/Player Spawn Settings")]
+	// 플레이어 프리팹과 로컬 이동/대시 기본값을 담는 스폰 설정.
 	public sealed class PlayerSpawnSettings : ScriptableObject
 	{
 		// 로컬 이동 검증용 플레이어 프리팹입니다. 이후 네트워크 스폰 프리팹으로 교체합니다.

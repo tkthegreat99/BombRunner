@@ -8,6 +8,7 @@ using VContainer.Unity;
 
 namespace BombRunner.Scripts.Gameplay.Match
 {
+	// 로컬 플레이어가 가까운 생존자에게 타겟을 넘기는 태그 프로토타입.
 	public sealed class LocalTargetTossPrototype : ITickable
 	{
 		private readonly BombTargetService bombTargetService;

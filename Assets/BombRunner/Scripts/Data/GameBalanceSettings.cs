@@ -4,6 +4,7 @@ using UnityEngine;
 namespace BombRunner.Scripts.Data
 {
 	[CreateAssetMenu(fileName = "GameBalanceSettings", menuName = "Boom Runner/Game Balance Settings")]
+	// 매치 규칙과 프로토타입 액션 수치를 모아두는 밸런스 설정.
 	public sealed class GameBalanceSettings : ScriptableObject
 	{
 		[SerializeField] private float tagDistance = 1.5f;
